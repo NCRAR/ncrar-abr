@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from scipy import signal
 
-from atom.api import Atom, Int, Typed, Value
+from atom.api import Atom, Bool, Int, Typed, Value
 
 from .peakdetect import (generate_latencies_bound, generate_latencies_skewnorm,
                          guess, guess_iter, peak_iterator)
@@ -104,6 +104,7 @@ class WaveformPoint(Atom):
     wave_number = Int()
     point_type = Typed(Point)
     iterator = Value()
+    unscorable = Bool(False)
 
     def __init__(self, parent, index, wave_number, point_type):
         # Order of setting attributes is important here
@@ -139,10 +140,14 @@ class WaveformPoint(Atom):
         latency = self.x
         if self.parent.is_subthreshold():
             return -np.abs(latency)
+        elif self.unscorable:
+            return -np.abs(latency)
         return latency
 
     @property
     def amplitude(self):
+        if self.unscorable:
+            return np.nan
         return self.parent.signal.iloc[self.index]
 
     def move(self, step):

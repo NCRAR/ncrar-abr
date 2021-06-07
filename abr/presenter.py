@@ -244,6 +244,14 @@ class WaveformPresenter(Atom):
         except:
             pass
 
+    def toggle_selected_point_unscorable(self):
+        try:
+            point = self.get_current_point()
+            point.unscorable = not point.unscorable
+            self.update()
+        except:
+            pass
+
     def get_current_waveform(self):
         return self.model.waveforms[self.current]
 
