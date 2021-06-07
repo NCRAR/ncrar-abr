@@ -88,7 +88,7 @@ class Interactor:
                 self.presenter.toggle = int(event.key), Point.PEAK
             elif event.key in ('alt+1', 'alt+2', 'alt+3', 'alt+4', 'alt+5'):
                 self.presenter.toggle = int(event.key[-1]), Point.VALLEY
-            elif event.key == 'delete':
+            elif event.key in ('delete', 'backspace'):
                 self.presenter.toggle_selected_point_unscorable()
             elif event.key == 'pagedown':
                 self.presenter.load_next()
@@ -113,10 +113,9 @@ enamldef MPLContainer(Container): di:
 
     constraints = [
         vbox(
-            #keys,
             hbox(show_filename, supra, sub, load, spacer),
             #hbox(guess, clear, spacer),
-            hbox(clear, spacer),
+            hbox(clear, unscorable, spacer),
             filename,
             canvas
         ),
@@ -193,6 +192,19 @@ enamldef MPLContainer(Container): di:
                 triggered ::
                     presenter.clear_valleys()
 
+    ToolButton: unscorable:
+        text = 'Mark unscorable'
+        popup_mode = 'instant'
+        Menu:
+            Action:
+                text = 'All peaks at this level and lower'
+                triggered ::
+                    presenter.mark_unscorable('descending')
+
+            Action:
+                text = 'All peaks at all levels'
+                triggered::
+                    presenter.mark_unscorable('all')
 
     PushButton: supra:
         text = 'All above threshold'

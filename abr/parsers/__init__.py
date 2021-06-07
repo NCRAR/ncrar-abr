@@ -75,18 +75,28 @@ def load_analysis(fname):
 
 def parse_peaks(peaks, threshold):
     # Convert the peaks dataframe to a format that can be used by _set_points.
-    p_pattern = re.compile('P(\d) Latency')
-    n_pattern = re.compile('N(\d) Latency')
-
+    pl_pattern = re.compile('P(\d) Latency')
+    nl_pattern = re.compile('N(\d) Latency')
     p_latencies = {}
     n_latencies = {}
 
+    pa_pattern = re.compile('P(\d) Amplitude')
+    na_pattern = re.compile('N(\d) Amplitude')
+    p_amplitudes = {}
+    n_amplitudes = {}
+
+    for i in range(5):
+        if f'P{i} Amplitude' in peaks:
+            p_info = pd.DataFrame({
+                'x': peaks['P{i} Amplitude']
+            })
+
     for c in peaks:
-        match = p_pattern.match(c)
+        match = pl_pattern.match(c)
         if match:
             wave = int(match.group(1))
             p_latencies[wave] = pd.DataFrame({'x': peaks[c]})
-        match = n_pattern.match(c)
+        match = nl_pattern.match(c)
         if match:
             wave = int(match.group(1))
             n_latencies[wave] = pd.DataFrame({'x': peaks[c]})
@@ -138,10 +148,10 @@ class Parser(object):
 
     def load_analysis(self, series, filename):
         freq, th, peaks = load_analysis(filename)
-        series.threshold = th
-        p_latencies, n_latencies = parse_peaks(peaks, th)
-        series._set_points(p_latencies, Point.PEAK)
-        series._set_points(n_latencies, Point.VALLEY)
+        series.load_analysis(th, peaks)
+        #series.threshold = th
+        #p_latencies, n_latencies = parse_peaks(peaks, th)
+        #series._set_points(n_latencies, Point.VALLEY)
 
     def find_analyzed_files(self, filename, frequency):
         frequency = round(frequency * 1e-3, 8)

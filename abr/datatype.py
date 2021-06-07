@@ -63,11 +63,26 @@ class ABRWaveform:
     def std(self, lb, ub):
         return self.stat(lb, ub, np.std)
 
-    def set_point(self, wave, ptype, index):
+    def set_point(self, wave, ptype, index=None, latency=None,
+                  unscorable=False):
+
+        # First, figure out index given requested latency
+        if index is None and latency is None:
+            raise ValueError('Must provide index or latency')
+        elif index is not None and latency is not None:
+            raise ValueError('Must provide either index or latency')
+        elif latency is not None:
+            index = np.searchsorted(self.x, latency)
+            index = np.clip(index, 0, len(self.x)-1)
+
+        # Now, create point if it does not exist
         if (wave, ptype) not in self.points:
             point = WaveformPoint(self, 0, wave, ptype)
             self.points[wave, ptype] = point
+
+        # Update the values on the point
         self.points[wave, ptype].index = int(index)
+        self.points[wave, ptype].unscorable = unscorable
 
     def clear_points(self):
         self.points = {}
@@ -85,12 +100,10 @@ class ABRWaveform:
     def _set_points(self, guesses, ptype):
         for wave, wave_guess in guesses.iterrows():
             index = wave_guess.get('index', np.nan)
-            if not np.isfinite(index):
-                index = np.searchsorted(self.x , wave_guess['x'])
-                index = np.clip(index, 0, len(self.x)-1)
+            if np.isfinite(index):
+                self.set_point(wave, ptype, index=int(index))
             else:
-                index = int(index)
-            self.set_point(wave, ptype, index)
+                self.set_point(wave, ptype, latency=wave_guess['x'])
 
 
 class WaveformPoint(Atom):
@@ -214,3 +227,20 @@ class ABRSeries(object):
         for level, level_guess in level_guesses.items():
             waveform = self.get_level(level)
             waveform._set_points(level_guess, ptype)
+
+    def load_analysis(self, threshold, points):
+        self.threshold = threshold
+        for waveform in self.waveforms:
+            analysis = points.loc[waveform.level]
+            for i in range(1, 6):
+                try:
+                    p_latency = np.abs(analysis[f'P{i} Latency'])
+                    n_latency = np.abs(analysis[f'N{i} Latency'])
+                    p_amplitude = analysis[f'P{i} Amplitude']
+                    n_amplitude = analysis[f'N{i} Amplitude']
+                    p_unscorable = bool(np.isnan(p_amplitude))
+                    n_unscorable = bool(np.isnan(n_amplitude))
+                    waveform.set_point(i, Point.PEAK, latency=p_latency, unscorable=p_unscorable)
+                    waveform.set_point(i, Point.VALLEY, latency=n_latency, unscorable=n_unscorable)
+                except KeyError:
+                    pass

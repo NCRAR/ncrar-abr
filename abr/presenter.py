@@ -252,6 +252,18 @@ class WaveformPresenter(Atom):
         except:
             pass
 
+    def mark_unscorable(self, mode):
+        try:
+            for waveform in self.model.waveforms:
+                if mode == 'all':
+                    waveform.points[self.toggle].unscorable = True
+                elif mode == 'descending':
+                    if waveform.level <= self.get_current_waveform().level:
+                        waveform.points[self.toggle].unscorable = True
+            self.update()
+        except:
+            pass
+
     def get_current_waveform(self):
         return self.model.waveforms[self.current]
 
