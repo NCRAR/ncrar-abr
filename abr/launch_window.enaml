@@ -5,7 +5,8 @@ from atom.api import Atom, Bool, Enum, Int, List, Str
 from enaml.core.api import Looper
 from enaml.layout.api import hbox, vbox
 from enaml.stdlib.fields import IntField
-from enaml.stdlib.message_box import information
+from enaml.stdlib.message_box import warning, information
+from enaml.validator import Validator
 from enaml.widgets.api import (CheckBox, Container, Field, FileDialogEx,
                                HGroup, Label, MainWindow, ObjectCombo,
                                PushButton)
@@ -28,8 +29,7 @@ class Settings(Atom):
 
     def get_default_args(self):
         args = ['--parser', self.parser]
-        if self.analyzer:
-            args.extend(['--user', self.analyzer])
+        args.extend(['--user', self.analyzer])
         if self.filter_data:
             args.extend(['--highpass', str(self.filter_lb)])
             args.extend(['--lowpass', str(self.filter_ub)])
@@ -65,6 +65,12 @@ class Settings(Atom):
             information(None, 'No data', mesg)
 
 
+class AnalyzerValidator(Validator):
+
+    def validate(self, text):
+        return bool(text)
+
+
 enamldef LaunchWindow(MainWindow):
 
     title = 'ABR analysis'
@@ -81,14 +87,14 @@ enamldef LaunchWindow(MainWindow):
                 hbox(m_label, waves),
                 hbox(do_filter, filter_lb, l_filter_to, filter_ub, l_filter_end),
                 hbox(b_basic, b_loop),
-                shuffle,
+                #shuffle,
             ),
             a_label.width == m_label.width,
             a_label.width == p_label.width,
             a_label.width == do_filter.width,
             b_basic.width == b_loop.width,
             m_label.v_center == waves.v_center,
-            shuffle.left == b_loop.left,
+            #shuffle.left == b_loop.left,
         ]
 
         Label: a_label:
@@ -96,6 +102,8 @@ enamldef LaunchWindow(MainWindow):
 
         Field: a_field:
             text := settings.analyzer
+            validator = AnalyzerValidator()
+            placeholder = 'Your name or initials. Be consistent.'
 
         Label: m_label:
             text = 'Measure waves'
@@ -144,14 +152,16 @@ enamldef LaunchWindow(MainWindow):
 
         PushButton: b_basic:
             text = 'Launch basic'
+            enabled << bool(settings.analyzer)
             clicked ::
                 settings.launch_basic()
 
         PushButton: b_loop:
             text = 'Batch mode'
+            enabled << bool(settings.analyzer)
             clicked ::
                 settings.launch_batch()
 
-        CheckBox: shuffle:
-            text = 'Shuffle?'
-            checked := settings.shuffle
+        #CheckBox: shuffle:
+        #    text = 'Shuffle?'
+        #    checked := settings.shuffle
