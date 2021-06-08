@@ -1,7 +1,8 @@
 from __future__ import division
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+from scipy import signal
 
 from abr.datatype import ABRWaveform, ABRSeries
 
@@ -146,27 +147,40 @@ latencies = {
     6000: 1.8,
 }
 
-def load(fname, filter=None, abr_window=8.5e-3):
-    with open(fname) as fh:
+def load(filename, filter=None, abr_window=8.5e-3):
+    with open(filename) as fh:
         line = fh.readline()
         if not line.startswith('Identifier:'):
             raise IOError('Unsupported file format')
-    info = load_metadata(fname)
-    info = info[info.channel == 1]
+
+    info = load_metadata(filename)
+    info = info.query('channel == 1')
+    print(info)
     fs = 1/(info.iloc[0]['smp. period']*1e-6)
+    data = load_waveforms(filename, info)
+
     series = []
     for frequency, f_info in info.groupby('stim. freq.'):
-        signal = load_waveforms(fname, f_info)
-        signal = signal[signal.index >= 0]
+        data = load_waveforms(filename, f_info)
+
+        if filter is not None:
+            Wn = filter['highpass']/(0.5*fs), filter['lowpass']/(0.5*fs)
+            N = filter['order']
+            b, a = signal.iirfilter(N, Wn)
+            data[:] = signal.filtfilt(b, a, data.values, axis=0)
+            print('filtering')
+
+        data = data.query('time >= 0')
+
         waveforms = []
-        min_latency = latencies.get(frequency)
+        #min_latency = latencies.get(frequency)
+
         for i, row in f_info.iterrows():
-            s = signal[i].values[np.newaxis]
-            waveform = ABRWaveform(fs, s, row['level'], min_latency=min_latency,
-                                   filter=filter)
+            d = data[i]
+            waveform = ABRWaveform(fs, d, row['level'])
             waveforms.append(waveform)
 
         s = ABRSeries(waveforms, frequency/1e3)
-        s.filename = fname
+        s.filename = filename
         series.append(s)
     return series
