@@ -6,8 +6,7 @@ from enaml.application import deferred_call
 from enaml.core.api import Looper
 from enaml.layout.api import hbox, InsertItem, InsertTab, spacer, vbox
 from enaml.stdlib.dialog_buttons import DialogButton
-from enaml.stdlib.message_box import warning
-from enaml.stdlib.message_box import critical
+from enaml.stdlib.message_box import critical, information, warning
 from enaml.widgets.api import (Action, ActionGroup, CheckBox, Container,
                                DockArea, DockItem, GroupBox, Label, Feature, Form,
                                HGroup, MainWindow, Menu, MPLCanvas,
@@ -74,6 +73,7 @@ class Interactor:
                 self.presenter.update_point()
             elif event.key == 's':
                 self.presenter.save()
+                information(None, 'Data saved', 'Analysis saved to file.')
             elif event.key == 'right':
                 self.presenter.move_selected_point(('zero_crossing', 1))
             elif event.key == 'left':
@@ -82,6 +82,10 @@ class Interactor:
                 self.presenter.move_selected_point(('time', 1e-5))
             elif event.key == 'alt+left':
                 self.presenter.move_selected_point(('time', -1e-5))
+            elif event.key == 'shift+right':
+                self.presenter.move_selected_point(('time', 1e-6))
+            elif event.key == 'shift+left':
+                self.presenter.move_selected_point(('time', -1e-6))
             elif event.key == 'n':
                 self.presenter.normalized = not self.presenter.normalized
             elif event.key in ('1', '2', '3', '4', '5'):
@@ -115,6 +119,13 @@ def get_title(frequency, filename, show_filename):
         return '{} kHz'.format(frequency)
 
 
+def get_rater(filename):
+    rater = filename.stem.rsplit('-', 2)[1]
+    if rater.endswith('kHz'):
+        return 'Unknown rater'
+    return rater
+
+
 enamldef MPLContainer(Container): di:
 
     attr presenter
@@ -123,7 +134,6 @@ enamldef MPLContainer(Container): di:
     constraints = [
         vbox(
             hbox(show_filename, supra, sub, load, spacer),
-            #hbox(guess, clear, spacer),
             hbox(clear, unscorable, spacer),
             filename,
             canvas
@@ -132,18 +142,6 @@ enamldef MPLContainer(Container): di:
         load.width == 200,
     ]
 
-    #GroupBox: keys:
-    #    Label:
-    #        text =  't\t\t\tset threshold'
-    #    Label:
-    #        text =  '<number key>\t\tselect peak'
-    #    Label:
-    #        text =  'Alt + <number key>\tselect valley'
-    #    Label:
-    #        text =  '<up/down key>\t\tselect waveform'
-    #    Label:
-    #        text =  '<left/right key>\t\tmove selected peak/valley'
-
     ToolButton: load:
         text = 'Load analysis'
         popup_mode = 'instant'
@@ -151,7 +149,7 @@ enamldef MPLContainer(Container): di:
             Looper: looper:
                 iterable << analyzed_filenames[:]
                 Menu:
-                    title << loop_item.stem
+                    title << get_rater(loop_item)
                     Action:
                         text = 'Plot'
                         triggered ::
