@@ -14,7 +14,7 @@ from enaml.core.api import d_, Declarative
 from enaml.qt.qt_application import QtApplication
 
 with enaml.imports():
-    from abr.launch_window import LaunchWindow
+    from abr.launch_window import LaunchWindow, SummarizeWindow
     from abr.main_window import (CompareWindow, DNDWindow, load_files,
                                  SerialWindow)
     from abr.presenter import SerialWaveformPresenter, WaveformPresenter
@@ -84,6 +84,14 @@ def parse_args(parser, waves=True):
 def main_launcher():
     app = QtApplication()
     window = LaunchWindow()
+    window.show()
+    app.start()
+    app.stop()
+
+
+def main_summarize():
+    app = QtApplication()
+    window = SummarizeWindow()
     window.show()
     app.start()
     app.stop()

@@ -1,16 +1,16 @@
+from pathlib import Path
 import subprocess
 
-from atom.api import Atom, Bool, Enum, Int, List, Str
+from atom.api import Atom, Bool, Enum, Int, List, Str, Typed
 
 from enaml.core.api import Looper
-from enaml.layout.api import hbox, vbox
+from enaml.layout.api import align, hbox, spacer, vbox
 from enaml.stdlib.fields import IntField
 from enaml.stdlib.message_box import warning, information
 from enaml.validator import Validator
 from enaml.widgets.api import (CheckBox, Container, Field, FileDialogEx,
                                HGroup, Label, MainWindow, ObjectCombo,
                                PushButton)
-
 
 from abr import main_icon
 from abr.parsers import PARSER_MAP
@@ -26,6 +26,9 @@ class Settings(Atom):
     filter_ub = Int(3000)
     last_directory = Str()
     parser = Enum(*list(PARSER_MAP.keys()))
+
+    calibration_file = Typed(Path, ())
+    latency_file = Typed(Path, ())
 
     def get_default_args(self):
         args = ['--parser', self.parser]
@@ -71,7 +74,7 @@ class AnalyzerValidator(Validator):
         return bool(text)
 
 
-enamldef LaunchWindow(MainWindow):
+enamldef LaunchWindow(MainWindow): window:
 
     title = 'ABR analysis'
     icon = main_icon
@@ -84,17 +87,20 @@ enamldef LaunchWindow(MainWindow):
             vbox(
                 hbox(a_label, a_field),
                 hbox(p_label, p_field),
+                hbox(calfile_label, calfile_field, calfile_button),
+                hbox(latency_label, latency_field, latency_button),
                 hbox(m_label, waves),
                 hbox(do_filter, filter_lb, l_filter_to, filter_ub, l_filter_end),
                 hbox(b_basic, b_loop),
-                #shuffle,
             ),
-            a_label.width == m_label.width,
-            a_label.width == p_label.width,
-            a_label.width == do_filter.width,
-            b_basic.width == b_loop.width,
-            m_label.v_center == waves.v_center,
-            #shuffle.left == b_loop.left,
+            align('width', a_label, m_label, p_label, calfile_label, latency_label, do_filter),
+            align('left', a_field, p_field, calfile_field, latency_field, waves, filter_lb),
+            align('width', b_basic, b_loop),
+            align('v_center', m_label, waves),
+            align('v_center', calfile_label, calfile_field, calfile_button),
+            align('v_center', latency_label, latency_field, latency_button),
+            calfile_button.width == 30,
+            latency_button.width == 30,
         ]
 
         Label: a_label:
@@ -118,9 +124,11 @@ enamldef LaunchWindow(MainWindow):
             to_string << PARSER_MAP.get
 
         HGroup: waves:
+            spacing = 0
+            padding = 0
+            trailing_spacer = spacer(0)
             Looper:
                 iterable << range(1, 6)
-
                 CheckBox:
                     text = str(loop_item)
                     checked << loop_item in settings.waves[:]
@@ -162,6 +170,83 @@ enamldef LaunchWindow(MainWindow):
             clicked ::
                 settings.launch_batch()
 
-        #CheckBox: shuffle:
-        #    text = 'Shuffle?'
-        #    checked := settings.shuffle
+        Label: calfile_label:
+            text = 'Calibration file'
+
+        Label: calfile_field:
+            text << str(settings.calibration_file)
+
+        PushButton: calfile_button:
+            text = '🗎'
+            clicked ::
+                filters =['Spreadsheet (*.csv, *.xls, *.xlsx)']
+                result = FileDialogEx.get_open_file_name(
+                    parent=window, current_path=str(settings.calibration_file),
+                    name_filters=filters)
+                if result:
+                    settings.calibration_file = Path(result)
+
+        Label: latency_label:
+            text = 'Summary file'
+
+        Label: latency_field:
+            text << str(settings.latency_file)
+
+        PushButton: latency_button:
+            text = '🗎'
+            clicked ::
+                filters =['Spreadsheet (*.csv, *.xls, *.xlsx)']
+                result = FileDialogEx.get_open_file_name(
+                    parent=window, current_path=str(settings.latency_file),
+                    name_filters=filters)
+                if result:
+                    settings.latency_file = Path(result)
+
+
+enamldef SummarizeWindow(MainWindow): window:
+
+    title = 'ABR analysis summary'
+    icon = main_icon
+
+    Container:
+
+        constraints << [
+            vbox(
+                hbox(input_label, input_field, input_button),
+                hbox(output_label, output_field, output_button),
+            ),
+            align('v_center', input_label, input_field, input_button),
+            align('v_center', output_label, output_field, output_button),
+            input_button.width == 30,
+            output_button.width == 30,
+        ]
+
+        Label: input_label:
+            text = 'Folder to summarize'
+
+        Label: input_field:
+            pass
+
+        PushButton: input_button:
+            text = '🗎'
+            clicked ::
+                result = FileDialogEx.get_existing_directory(
+                    parent=window,
+                )
+                if result:
+                    print('foo')
+
+        Label: output_label:
+            text = 'Output file'
+
+        Label: output_field:
+            pass
+
+        PushButton: output_button:
+            text = '🗎'
+            clicked ::
+                result = FileDialogEx.get_save_file_name(
+                    parent=window,
+                )
+                if result:
+                    print('foo')
