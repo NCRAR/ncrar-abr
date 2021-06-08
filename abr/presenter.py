@@ -319,6 +319,8 @@ class WaveformPresenter(Atom):
     def load_analysis(self, filename):
         self.clear_points()
         self.parser.load_analysis(self.model, filename)
+        self.peaks_marked = True
+        self.valleys_marked = True
         self.update()
 
 

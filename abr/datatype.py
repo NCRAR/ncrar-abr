@@ -97,7 +97,7 @@ class ABRWaveform:
             if ptype == Point.VALLEY:
                 del self.points[wave, ptype]
 
-    def _set_points(self, guesses, ptype):
+    def set_points(self, guesses, ptype):
         for wave, wave_guess in guesses.iterrows():
             index = wave_guess.get('index', np.nan)
             if np.isfinite(index):
@@ -223,15 +223,14 @@ class ABRSeries(object):
         for waveform in self.waveforms:
             waveform.clear_valleys()
 
-    def _set_points(self, level_guesses, ptype):
-        for level, level_guess in level_guesses.items():
-            waveform = self.get_level(level)
-            waveform._set_points(level_guess, ptype)
+    def set_points(self, guesses, ptype):
+        for waveform, guess in guesses.items():
+            waveform.set_points(guess, ptype)
 
     def load_analysis(self, threshold, points):
         self.threshold = threshold
-        for waveform in self.waveforms:
-            analysis = points.loc[waveform.level]
+        for j, waveform in enumerate(self.waveforms[::-1]):
+            analysis = points.iloc[j]
             for i in range(1, 6):
                 try:
                     p_latency = np.abs(analysis[f'P{i} Latency'])
