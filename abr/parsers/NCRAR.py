@@ -1,7 +1,6 @@
-from __future__ import division
-
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from scipy import signal
 
 from abr.datatype import ABRWaveform, ABRSeries
@@ -135,6 +134,12 @@ def load_waveforms(filename, info):
     return waveforms
 
 
+def is_ihs_file(filename):
+    with open(filename) as fh:
+        line = fh.readline()
+        return line.startswith('Identifier:')
+
+
 ################################################################################
 # API
 ################################################################################
@@ -148,10 +153,8 @@ latencies = {
 }
 
 def load(filename, filter=None, abr_window=8.5e-3):
-    with open(filename) as fh:
-        line = fh.readline()
-        if not line.startswith('Identifier:'):
-            raise IOError('Unsupported file format')
+    if not is_ihs_file(filename):
+        raise IOError('Unsupported file format')
 
     info = load_metadata(filename)
     info = info.query('channel == 1')
@@ -180,7 +183,17 @@ def load(filename, filter=None, abr_window=8.5e-3):
             waveform = ABRWaveform(fs, d, row['level'])
             waveforms.append(waveform)
 
-        s = ABRSeries(waveforms, frequency/1e3)
+        s = ABRSeries(waveforms, frequency)
         s.filename = filename
         series.append(s)
     return series
+
+
+def find_all(dirname, filter_settings, frequencies=None):
+    candidates = [p for p in Path(dirname).glob('**/*.txt') if 'analyzed' not in p.name]
+    results = []
+    for candidate in candidates:
+        if is_ihs_file(candidate):
+            for frequency in load_metadata(candidate)['stim. freq.'].unique():
+                results.append((candidate, frequency))
+    return results
