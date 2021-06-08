@@ -22,6 +22,7 @@ with enaml.imports():
     from abr.presenter import SerialWaveformPresenter, WaveformPresenter
 
 
+from abr import parsers
 from abr.parsers import Parser
 
 
@@ -67,6 +68,8 @@ def add_default_arguments(parser, waves=True):
                         type=int)
     parser.add_argument('--parser', default='HDF5', help='Parser to use')
     parser.add_argument('--user', help='Name of person analyzing data')
+    parser.add_argument('--calibration', help='Calibration file')
+    parser.add_argument('--latency', help='Latency file')
     if waves:
         group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument('--threshold-only', action='store_true')
@@ -86,8 +89,11 @@ def parse_args(parser, waves=True):
             'highpass': options.highpass,
             'order': options.order,
         }
-    new_options['parser'] = Parser(options.parser, filter_settings,
-                                   options.user)
+    new_options['parser'] = Parser(file_format=options.parser, 
+                                   filter_settings=filter_settings,
+                                   user=options.user, 
+                                   calibration=options.calibration,
+                                   latency=options.latency)
 
     if not waves:
         return new_options
@@ -103,28 +109,21 @@ def parse_args(parser, waves=True):
 
 
 def main_launcher():
-    app = QtApplication()
+    parser = argparse.ArgumentParser('abr')
+    args = parser.parse_args()
 
+    app = QtApplication()
     settings = Settings()
     settings.set_state(read_config())
     window = LaunchWindow(settings=settings)
     window.show()
     app.start()
     app.stop()
-
     write_config(settings.get_state())
 
 
-def main_summarize():
-    app = QtApplication()
-    window = SummarizeWindow()
-    window.show()
-    app.start()
-    app.stop()
-
-
 def main_gui():
-    parser = argparse.ArgumentParser('abr_gui')
+    parser = argparse.ArgumentParser('abr-gui')
     add_default_arguments(parser)
     parser.add_argument('--demo', action='store_true', dest='demo',
                         default=False, help='Load demo data')
@@ -263,3 +262,42 @@ def main_compare():
     view.show()
     app.start()
     app.stop()
+
+
+def aggregate(study_directory, output_file):
+    output_file = Path(output_file).with_suffix('.xlsx')
+    study_directory = Path(study_directory)
+
+    analyzed = list(study_directory.glob('**/*analyzed*.txt'))
+
+    keys = []
+    thresholds = []
+    waves = []
+    for a in analyzed:
+        f, th, w = parsers.load_analysis(a)
+        subject, _, analyzer, _ = a.stem.split('-')
+        keys.append((subject, analyzer, f))
+        thresholds.append(th)
+        waves.append(w)
+
+    index = pd.MultiIndex.from_tuples(keys, names=['subject', 'analyzer', 'frequency'])
+    thresholds = pd.Series(thresholds, index=index, name='thresholds').reset_index()
+    waves = pd.concat(waves, keys=keys, names=['subject', 'analyzer', 'frequency']).reset_index()
+    for i in range(1, 7):
+        try:
+            waves[f'W{i} Amplitude'] = waves[f'P{i} Amplitude'] - waves[f'N{i} Amplitude']
+            waves[f'W{i} Amplitude re baseline'] = waves[f'P{i} Amplitude'] - waves[f'1msec Avg']
+        except KeyError:
+            pass
+
+    with pd.ExcelWriter(output_file) as writer:
+        thresholds.to_excel(writer, sheet_name='thresholds', index=False)
+        waves.to_excel(writer, sheet_name='waves', index=False)
+
+
+def main_aggregate():
+    parser = argparse.ArgumentParser('abr-aggregate')
+    parser.add_argument('study_directory')
+    parser.add_argument('output_file')
+    args = parser.parse_args()
+    aggregate(args.study_directory, args.output_file)

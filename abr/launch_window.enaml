@@ -1,3 +1,4 @@
+from pathlib import Path
 import subprocess
 
 from atom.api import Atom, Bool, Enum, Int, List, Str, Typed
@@ -39,8 +40,9 @@ class Settings(Atom):
                 pass
 
     def get_default_args(self):
-        args = ['--parser', self.parser]
-        args.extend(['--user', self.analyzer])
+        args = ['--parser', self.parser, '--user', self.analyzer,
+                '--calibration', self.calibration_file, '--latency',
+                self.latency_file]
         if self.filter_data:
             args.extend(['--highpass', str(self.filter_lb)])
             args.extend(['--lowpass', str(self.filter_ub)])
@@ -54,17 +56,21 @@ class Settings(Atom):
         return args
 
     def launch_basic(self):
-        args = ['abr_gui']
+        args = ['abr-gui']
         args.extend(self.get_default_args())
         result = subprocess.check_output(args)
 
     def launch_batch(self):
-        args = ['abr_batch', '--skip-errors', self.study_folder]
+        args = ['abr-batch', '--skip-errors', self.study_folder]
         args.extend(self.get_default_args())
         result = subprocess.check_output(args)
         if result.decode().strip() == 'No files to process':
             mesg = 'No ABR experiments found in {}'.format(self.study_folder)
             raise ValueError(mesg)
+
+    def launch_export(self, output_file):
+        args = ['abr-aggregate', self.study_folder, output_file]
+        result = subprocess.check_output(args)
 
 
 class AnalyzerValidator(Validator):
@@ -99,6 +105,7 @@ enamldef LaunchWindow(MainWindow): window:
             align('v_center', calfile_label, calfile_field, calfile_button),
             align('v_center', latency_label, latency_field, latency_button),
             align('v_center', study_label, study_field, study_button),
+            align('width', b_basic, b_loop, b_export, b_compare),
             calfile_button.width == 30,
             latency_button.width == 30,
             study_button.width == 30,
@@ -207,13 +214,16 @@ enamldef LaunchWindow(MainWindow): window:
 
         PushButton: b_basic:
             text = 'Launch basic'
-            enabled << bool(settings.analyzer)
+            enabled << bool(settings.analyzer) and \
+                Path(settings.calibration_file).is_file()
             clicked ::
                 settings.launch_basic()
 
         PushButton: b_loop:
             text = 'Launch batch'
-            enabled << bool(settings.analyzer) and bool(settings.study_folder)
+            enabled << bool(settings.analyzer) and \
+                bool(settings.study_folder) and \
+                Path(settings.calibration_file).is_file()
             clicked ::
                 try:
                     settings.launch_batch()
@@ -224,7 +234,12 @@ enamldef LaunchWindow(MainWindow): window:
             text = 'Export analysis'
             enabled << bool(settings.study_folder)
             clicked ::
-                settings.launch_export()
+                result = FileDialogEx.get_save_file_name(
+                    parent=window, current_path=settings.study_folder,
+                    name_filters=['Excel Spreadsheet (*.xlsx)'])
+                if result:
+                    settings.launch_export(result)
+                    information(window, 'Results saved', f'Exported results to {result}')
 
         PushButton: b_compare:
             text = 'Compare raters'

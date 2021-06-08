@@ -62,7 +62,7 @@ def load_analysis(fname):
     with open(fname) as fh:
         text = fh.readline()
         th = th_match.search(text).group(1)
-        th = None if th == 'None' else float(th)
+        th = np.nan if th == 'None' else float(th)
         text = fh.readline()
         freq = float(freq_match.search(text).group(1))
 
@@ -70,6 +70,8 @@ def load_analysis(fname):
             if line.startswith('NOTE'):
                 break
         data = pd.io.parsers.read_csv(fh, sep='\t', index_col='Level')
+        keep = [c for c in data.columns if not c.startswith('Unnamed')]
+        data = data[keep]
     return (freq, th, data)
 
 
@@ -125,7 +127,8 @@ class Parser(object):
 
     filename_template = '{filename}-{frequency}kHz-{user}analyzed.txt'
 
-    def __init__(self, file_format, filter_settings, user=None):
+    def __init__(self, file_format, filter_settings, user, calibration=None,
+                 latency=None):
         '''
         Parameters
         ----------
@@ -136,15 +139,24 @@ class Parser(object):
             lowpass, highpass and order as keys.
         user : {None, string}
             Person analyzing the data.
+        calibration : {None, path}
+            Path to calibration file
+        latency : {None, path}
+            Path to latency file
         '''
         self._file_format = file_format
         self._filter_settings = filter_settings
         self._user = user
         self._module_name = f'abr.parsers.{file_format}'
         self._module = importlib.import_module(self._module_name)
+        self._calibration = calibration
+        self._latency = latency
+        print(self._calibration)
 
     def load(self, filename, frequencies=None):
-        return self._module.load(filename, self._filter_settings, frequencies)
+        return self._module.load(filename, self._filter_settings, frequencies,
+                                 calibration=self._calibration,
+                                 latency=self._latency)
 
     def load_analysis(self, series, filename):
         freq, th, peaks = load_analysis(filename)

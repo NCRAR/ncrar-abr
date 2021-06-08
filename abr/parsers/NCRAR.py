@@ -1,3 +1,4 @@
+import datetime as dt
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -9,6 +10,40 @@ from abr.datatype import ABRWaveform, ABRSeries
 ################################################################################
 # Utility functions
 ################################################################################
+def _fix_frequency(x):
+    if x == 'Click':
+        return 0
+    else:
+        return float(x.strip(' Hz'))
+
+
+def parse_identifier(identifier):
+    '''
+    Example: "Identifier:,IHS5453-2019AV01"
+
+    "2019AV01" = Oct 31, 2019
+
+    2019 = year
+    A = month, where 1-9 are the Jan-Sept and A=Oct, B=Nov, C=Dec
+    V = day, where 1-9 are the first days of the month, and A-V are the 10th to 31st
+    01 seems to be a constant
+    '''
+    month_map = {}
+    day_map = {}
+    for i in range(1, 10):
+        month_map[str(i)] = i
+        day_map[str(i)] = i
+    for i, code in enumerate('ABC'):
+        month_map[code] = i + 10
+    for i, code in enumerate('ABCDEFGHIJKLMNOPQRSTUV'):
+        day_map[code] = i + 10
+    system, date_code = identifier.split('-')
+    year = int(date_code[:4])
+    month = month_map[date_code[4]]
+    day = day_map[date_code[5]]
+    return pd.Series({'system': system[3:], 'date': dt.date(year, month, day)})
+
+
 def _parse_line(line):
     '''
     Parse list of comma-separated values from line
@@ -31,7 +66,7 @@ def _parse_line(line):
         return [t for t in tokens if t]
 
 
-def load_metadata(filename):
+def load_metadata(filename, calibration):
     '''
     Load the metadata stored in the ABR file
 
@@ -39,6 +74,8 @@ def load_metadata(filename):
     -----------
     filename : string
         Filename to load
+    calibration : DataFrame
+        Calibration data
 
     Returns
     -------
@@ -74,6 +111,13 @@ def load_metadata(filename):
     # Start time of stimulus in usec (since sampling period is reported in usec,
     # we should try to be consistent with all time units).
     info['stimulus_start'] = 12.8e3
+
+    # Interpret identifier string
+    info = info.join(info['identifier'].transform(parse_identifier))
+
+    # Load calibration data
+    info['actual_level'] = info.apply(get_actual_level, calibration=calibration, axis=1)
+
     return info
 
 
@@ -140,6 +184,43 @@ def is_ihs_file(filename):
         return line.startswith('Identifier:')
 
 
+def load_calibration(calibration_file):
+    calibration = pd.read_excel(calibration_file).rename(columns={
+        'IHS system number': 'system',
+        'IHS system booth': 'booth',
+        'Calibration date': 'date',
+        'Calibration frequency': 'frequency',
+        'Actual level': 'measured_level',
+        'Level on the IHS': 'nominal_level',
+    })
+    calibration['system'] = calibration['system'].astype(str)
+    calibration['frequency'] = calibration['frequency'].map(_fix_frequency)
+    return calibration
+
+
+def get_actual_level(row, calibration):
+    s = row['system']
+    d = row['date']
+    f = row['stim. freq.']
+    l = row['level']
+
+    matches = calibration.query('(system == @s) and (date <= @d)')
+    most_recent = matches['date'].max()
+    time_since_calibration = d - most_recent.date()
+
+    if time_since_calibration.days > (6 * 30):
+        raise IOError(f'No calibration within 6 months of {d.strftime("%m/%d/%Y")} on IHS system {s}.')
+
+    result = matches.query('(date == @most_recent) and (frequency == @f) and (nominal_level == @l)')
+    if result.empty:
+        raise IOError(f'IHS system {s} not calibrated on {most_recent.strftime("%m/%d/%Y")} for {f} Hz {l} dB SPL (as reported by IHS).')
+
+    if len(result) > 1:
+        raise IOError(f'Duplicate calibration data on IHS system {s} for {f} Hz {l} dB SPL (as reported by IHS).')
+
+    return result.iloc[0]['measured_level']
+
+
 ################################################################################
 # API
 ################################################################################
@@ -152,13 +233,14 @@ latencies = {
     6000: 1.8,
 }
 
-def load(filename, filter=None, abr_window=8.5e-3):
+def load(filename, filter, frequencies, calibration, latency, abr_window=8.5e-3):
     if not is_ihs_file(filename):
         raise IOError('Unsupported file format')
 
-    info = load_metadata(filename)
+    calibration = load_calibration(calibration)
+    info = load_metadata(filename, calibration)
+
     info = info.query('channel == 1')
-    print(info)
     fs = 1/(info.iloc[0]['smp. period']*1e-6)
     data = load_waveforms(filename, info)
 
@@ -180,7 +262,7 @@ def load(filename, filter=None, abr_window=8.5e-3):
 
         for i, row in f_info.iterrows():
             d = data[i]
-            waveform = ABRWaveform(fs, d, row['level'])
+            waveform = ABRWaveform(fs, d, row['actual_level'])
             waveforms.append(waveform)
 
         s = ABRSeries(waveforms, frequency)
