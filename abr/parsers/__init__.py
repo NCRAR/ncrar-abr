@@ -149,9 +149,6 @@ class Parser(object):
     def load_analysis(self, series, filename):
         freq, th, peaks = load_analysis(filename)
         series.load_analysis(th, peaks)
-        #series.threshold = th
-        #p_latencies, n_latencies = parse_peaks(peaks, th)
-        #series._set_points(n_latencies, Point.VALLEY)
 
     def find_analyzed_files(self, filename, frequency):
         frequency = round(frequency * 1e-3, 8)

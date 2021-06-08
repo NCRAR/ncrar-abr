@@ -72,7 +72,6 @@ def get_frequencies(filename, filter_settings):
 
 
 def find_all(dirname, filter_settings, frequencies=None):
-    print(frequencies)
     results = []
     for pathname in Path(dirname).glob('*abr*'):
         if pathname.is_dir() :
