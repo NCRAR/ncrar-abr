@@ -186,8 +186,7 @@ class Parser(object):
                 columns.append(f'{point_type_code}{point_number} {measure}')
 
         columns = '\t'.join(columns)
-        spreadsheet = '\n'.join(waveform_string(w) \
-                                for w in reversed(model.waveforms))
+        spreadsheet = '\n'.join(waveform_string(w) for w in reversed(model.waveforms))
         content = CONTENT.format(threshold=model.threshold,
                                  frequency=model.freq*1e-3,
                                  filter_history=filter_history,
@@ -249,7 +248,5 @@ NOTE: Negative latencies indicate no peak
 
 
 PARSER_MAP = {
-    'PSI': 'psiexperiment',
-    'EPL': 'EPL CFTS',
     'NCRAR': 'IHS text export',
 }
