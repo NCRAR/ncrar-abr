@@ -226,6 +226,8 @@ class ABRSeries(object):
             waveform.set_points(guess, ptype)
 
     def load_analysis(self, threshold, points):
+        if threshold is None:
+            threshold = np.nan
         self.threshold = threshold
         for j, waveform in enumerate(self.waveforms[::-1]):
             analysis = points.iloc[j]
