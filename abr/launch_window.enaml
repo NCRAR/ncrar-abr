@@ -243,6 +243,6 @@ enamldef LaunchWindow(MainWindow): window:
 
         PushButton: b_compare:
             text = 'Compare raters'
-            enabled << bool(settings.study_folder)
+            enabled << bool(settings.study_folder) and False
             clicked ::
                 settings.launch_compare()

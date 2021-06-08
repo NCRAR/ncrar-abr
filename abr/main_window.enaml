@@ -106,7 +106,6 @@ class Interactor:
                 self.presenter.bottom += 0.01
             elif event.key == 'shift+alt+down':
                 self.presenter.bottom -= 0.01
-
         except Exception as e:
             critical(None, 'Error', str(e))
 
@@ -214,6 +213,12 @@ enamldef SerialWindow(MainWindow):
     initial_size = (600, 900)
     title = 'ABR batch mode'
     icon = main_icon
+
+    initialized ::
+        try:
+            presenter.load_next()
+        except Exception as e:
+            deferred_call(critical, None, 'Error', str(e))
 
     Container:
         constraints = [

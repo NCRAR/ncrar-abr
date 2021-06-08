@@ -66,7 +66,7 @@ def _parse_line(line):
         return [t for t in tokens if t]
 
 
-def load_metadata(filename, calibration):
+def load_metadata(filename, calibration=None):
     '''
     Load the metadata stored in the ABR file
 
@@ -74,8 +74,8 @@ def load_metadata(filename, calibration):
     -----------
     filename : string
         Filename to load
-    calibration : DataFrame
-        Calibration data
+    calibration : {None, DataFrame}
+        Calibration data. If provided, will add a new column, `actual_level`.
 
     Returns
     -------
@@ -116,7 +116,12 @@ def load_metadata(filename, calibration):
     info = info.join(info['identifier'].transform(parse_identifier))
 
     # Load calibration data
-    info['actual_level'] = info.apply(get_actual_level, calibration=calibration, axis=1)
+    try:
+        if calibration is not None:
+            info['actual_level'] = \
+                info.apply(get_actual_level, calibration=calibration, axis=1)
+    except Exception as e:
+        raise IOError(f'Cannot load file {filename}\n{e}') from e
 
     return info
 

@@ -156,8 +156,7 @@ def main_batch():
 
     unprocessed = []
     for dirname in options['dirnames']:
-        files = parser.find_unprocessed(dirname,
-                                        frequencies=options['frequencies'])
+        files = parser.find_unprocessed(dirname, frequencies=options['frequencies'])
         unprocessed.extend(files)
 
     if options['shuffle']:

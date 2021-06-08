@@ -331,7 +331,6 @@ class SerialWaveformPresenter(WaveformPresenter):
     def __init__(self, parser, latencies, unprocessed):
         super().__init__(parser, latencies)
         self.unprocessed = unprocessed
-        self.load_next()
 
     def load_prior(self):
         if self.current_model < 0:
