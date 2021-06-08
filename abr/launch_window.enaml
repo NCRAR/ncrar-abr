@@ -1,4 +1,3 @@
-from pathlib import Path
 import subprocess
 
 from atom.api import Atom, Bool, Enum, Int, List, Str, Typed
@@ -21,14 +20,23 @@ class Settings(Atom):
     analyzer = Str()
     waves = List()
     filter_data = Bool(True)
-    shuffle = Bool(True)
     filter_lb = Int(300)
     filter_ub = Int(3000)
-    last_directory = Str()
     parser = Enum(*list(PARSER_MAP.keys()))
 
-    calibration_file = Typed(Path, ())
-    latency_file = Typed(Path, ())
+    calibration_file = Str()
+    latency_file = Str()
+    study_folder = Str()
+
+    def get_state(self):
+        return {m: getattr(self, m) for m in self.members().keys()}
+
+    def set_state(self, state):
+        for k, v in state.items():
+            try:
+                setattr(self, k, v)
+            except AttributeError:
+                pass
 
     def get_default_args(self):
         args = ['--parser', self.parser]
@@ -51,21 +59,12 @@ class Settings(Atom):
         result = subprocess.check_output(args)
 
     def launch_batch(self):
-        directory = FileDialogEx.get_existing_directory(current_path=self.last_directory)
-        if not directory:
-            return
-
-        self.last_directory = directory
-        args = ['abr_batch', '--skip-errors']
-        args.append(directory)
+        args = ['abr_batch', '--skip-errors', self.study_folder]
         args.extend(self.get_default_args())
-        if self.shuffle:
-            args.append('--shuffle')
-
         result = subprocess.check_output(args)
         if result.decode().strip() == 'No files to process':
-            mesg = 'No ABR experiments found in {}'.format(directory)
-            information(None, 'No data', mesg)
+            mesg = 'No ABR experiments found in {}'.format(self.study_folder)
+            raise ValueError(mesg)
 
 
 class AnalyzerValidator(Validator):
@@ -78,8 +77,7 @@ enamldef LaunchWindow(MainWindow): window:
 
     title = 'ABR analysis'
     icon = main_icon
-
-    attr settings = Settings(waves=[1])
+    attr settings
 
     Container:
 
@@ -91,7 +89,8 @@ enamldef LaunchWindow(MainWindow): window:
                 hbox(latency_label, latency_field, latency_button),
                 hbox(m_label, waves),
                 hbox(do_filter, filter_lb, l_filter_to, filter_ub, l_filter_end),
-                hbox(b_basic, b_loop),
+                hbox(study_label, study_field, study_button),
+                hbox(b_basic, b_loop, b_export, b_compare),
             ),
             align('width', a_label, m_label, p_label, calfile_label, latency_label, do_filter),
             align('left', a_field, p_field, calfile_field, latency_field, waves, filter_lb),
@@ -99,8 +98,10 @@ enamldef LaunchWindow(MainWindow): window:
             align('v_center', m_label, waves),
             align('v_center', calfile_label, calfile_field, calfile_button),
             align('v_center', latency_label, latency_field, latency_button),
+            align('v_center', study_label, study_field, study_button),
             calfile_button.width == 30,
             latency_button.width == 30,
+            study_button.width == 30,
         ]
 
         Label: a_label:
@@ -144,19 +145,65 @@ enamldef LaunchWindow(MainWindow): window:
 
         Label: l_filter_to:
             text = 'to'
-            visible << do_filter.checked
+            enabled << do_filter.checked
 
         Label: l_filter_end:
             text = 'Hz'
-            visible << do_filter.checked
+            enabled << do_filter.checked
 
         IntField: filter_lb:
-            visible << do_filter.checked
+            enabled << do_filter.checked
             value := settings.filter_lb
 
         IntField: filter_ub:
-            visible << do_filter.checked
+            enabled << do_filter.checked
             value := settings.filter_ub
+
+        Label: calfile_label:
+            text = 'Calibration file'
+
+        Label: calfile_field:
+            text << settings.calibration_file
+
+        PushButton: calfile_button:
+            text = '🗎'
+            clicked ::
+                filters =['Spreadsheet (*.csv, *.xls, *.xlsx)']
+                result = FileDialogEx.get_open_file_name(
+                    parent=window, current_path=settings.calibration_file,
+                    name_filters=filters)
+                if result:
+                    settings.calibration_file = result
+
+        Label: latency_label:
+            text = 'Latencies file'
+
+        Label: latency_field:
+            text << settings.latency_file
+
+        PushButton: latency_button:
+            text = '🗎'
+            clicked ::
+                filters =['Spreadsheet (*.csv, *.xls, *.xlsx)']
+                result = FileDialogEx.get_open_file_name(
+                    parent=window, current_path=settings.latency_file,
+                    name_filters=filters)
+                if result:
+                    settings.latency_file = result
+
+        Label: study_label:
+            text = 'Study folder'
+
+        Label: study_field:
+            text << settings.study_folder
+
+        PushButton: study_button:
+            text = '🗎'
+            clicked ::
+                result = FileDialogEx.get_existing_directory(
+                    parent=window, current_path=settings.study_folder)
+                if result:
+                    settings.study_folder = result
 
         PushButton: b_basic:
             text = 'Launch basic'
@@ -165,88 +212,22 @@ enamldef LaunchWindow(MainWindow): window:
                 settings.launch_basic()
 
         PushButton: b_loop:
-            text = 'Batch mode'
-            enabled << bool(settings.analyzer)
+            text = 'Launch batch'
+            enabled << bool(settings.analyzer) and bool(settings.study_folder)
             clicked ::
-                settings.launch_batch()
+                try:
+                    settings.launch_batch()
+                except ValueError as error:
+                    information(None, 'Unable to run batch', str(error))
 
-        Label: calfile_label:
-            text = 'Calibration file'
-
-        Label: calfile_field:
-            text << str(settings.calibration_file)
-
-        PushButton: calfile_button:
-            text = '🗎'
+        PushButton: b_export:
+            text = 'Export analysis'
+            enabled << bool(settings.study_folder)
             clicked ::
-                filters =['Spreadsheet (*.csv, *.xls, *.xlsx)']
-                result = FileDialogEx.get_open_file_name(
-                    parent=window, current_path=str(settings.calibration_file),
-                    name_filters=filters)
-                if result:
-                    settings.calibration_file = Path(result)
+                settings.launch_export()
 
-        Label: latency_label:
-            text = 'Summary file'
-
-        Label: latency_field:
-            text << str(settings.latency_file)
-
-        PushButton: latency_button:
-            text = '🗎'
+        PushButton: b_compare:
+            text = 'Compare raters'
+            enabled << bool(settings.study_folder)
             clicked ::
-                filters =['Spreadsheet (*.csv, *.xls, *.xlsx)']
-                result = FileDialogEx.get_open_file_name(
-                    parent=window, current_path=str(settings.latency_file),
-                    name_filters=filters)
-                if result:
-                    settings.latency_file = Path(result)
-
-
-enamldef SummarizeWindow(MainWindow): window:
-
-    title = 'ABR analysis summary'
-    icon = main_icon
-
-    Container:
-
-        constraints << [
-            vbox(
-                hbox(input_label, input_field, input_button),
-                hbox(output_label, output_field, output_button),
-            ),
-            align('v_center', input_label, input_field, input_button),
-            align('v_center', output_label, output_field, output_button),
-            input_button.width == 30,
-            output_button.width == 30,
-        ]
-
-        Label: input_label:
-            text = 'Folder to summarize'
-
-        Label: input_field:
-            pass
-
-        PushButton: input_button:
-            text = '🗎'
-            clicked ::
-                result = FileDialogEx.get_existing_directory(
-                    parent=window,
-                )
-                if result:
-                    print('foo')
-
-        Label: output_label:
-            text = 'Output file'
-
-        Label: output_field:
-            pass
-
-        PushButton: output_button:
-            text = '🗎'
-            clicked ::
-                result = FileDialogEx.get_save_file_name(
-                    parent=window,
-                )
-                if result:
-                    print('foo')
+                settings.launch_compare()

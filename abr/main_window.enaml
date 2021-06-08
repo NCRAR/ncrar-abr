@@ -111,14 +111,6 @@ class Interactor:
             critical(None, 'Error', str(e))
 
 
-def get_title(frequency, filename, show_filename):
-    if show_filename:
-        filename = os.path.split(os.path.split(filename)[0])[1]
-        return '{} kHz: {}'.format(frequency, filename)
-    else:
-        return '{} kHz'.format(frequency)
-
-
 def get_rater(filename):
     rater = filename.stem.rsplit('-', 2)[1]
     if rater.endswith('kHz'):
@@ -133,9 +125,7 @@ enamldef MPLContainer(Container): di:
 
     constraints = [
         vbox(
-            hbox(show_filename, supra, sub, load, spacer),
-            hbox(clear, unscorable, spacer),
-            filename,
+            hbox(supra, sub, spacer, load, clear, unscorable),
             canvas
         ),
         supra.width == sub.width,
@@ -168,19 +158,6 @@ enamldef MPLContainer(Container): di:
                                 items = di.analyzed_filenames[:]
                                 items.remove(loop_item)
                                 di.analyzed_filenames = items
-
-    #ToolButton: guess:
-    #    text = 'Guess'
-    #    popup_mode = 'instant'
-    #    Menu:
-    #        Action:
-    #            text = 'Peaks'
-    #            triggered ::
-    #                presenter.guess_peaks()
-    #        Action:
-    #            text = 'Valleys'
-    #            triggered ::
-    #                presenter.guess_valleys()
 
     ToolButton: clear:
         text = 'Clear'
@@ -222,15 +199,6 @@ enamldef MPLContainer(Container): di:
         text = 'All below threshold'
         clicked ::
             presenter.set_subthreshold()
-
-    CheckBox: show_filename:
-        checked = False
-        text = 'Show info'
-
-    Label: filename:
-        visible << show_filename.checked
-        text << '{} {} Hz'.format(getattr(presenter.model, 'id', ''), 
-                                  getattr(presenter.model, 'freq', ''))
 
     MPLCanvas: canvas:
         figure << presenter.figure
@@ -279,7 +247,7 @@ def add_dock_item(dock_area, model, path, presenter, analyzed_filenames):
     items = dock_area.dock_items()
     n_items = len(items)
     target = items[-1].name if n_items else ''
-    title = '{:.2f} kHz - {}'.format(model.freq, os.path.basename(path))
+    title = '{:.2f} kHz - {}'.format(model.freq * 1e-3, os.path.basename(path))
     item = MPLDockItem(dock_area,
                        name='dock_{}'.format(n_items),
                        title=title,
