@@ -94,6 +94,15 @@ class Interactor:
                 self.presenter.load_next()
             elif event.key == 'pageup':
                 self.presenter.load_prior()
+            elif event.key == 'shift+up':
+                self.presenter.top += 0.01
+            elif event.key == 'shift+down':
+                self.presenter.top -= 0.01
+            elif event.key == 'shift+alt+up':
+                self.presenter.bottom += 0.01
+            elif event.key == 'shift+alt+down':
+                self.presenter.bottom -= 0.01
+
         except Exception as e:
             critical(None, 'Error', str(e))
 

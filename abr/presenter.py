@@ -21,23 +21,32 @@ def plot_model(axes, model):
                                              axes.transAxes)
 
 
+    # Bring min/max of waveform down to something reasonable based on the
+    # means of the min/max values observed.
     limits = [(w.y.min(), w.y.max()) for w in model.waveforms]
     base_scale = np.mean(np.abs(np.array(limits)))
-
     bscale_in_box = T.Bbox([[0, -base_scale], [1, base_scale]])
     bscale_out_box = T.Bbox([[0, -1], [1, 1]])
     bscale_in = T.BboxTransformFrom(bscale_in_box)
     bscale_out = T.BboxTransformTo(bscale_out_box)
 
+    # Now, ensure that we rescale the waveforms such that the mean of the
+    # min/max runs from 0 to the full size of the offset step.
     tscale_in_box = T.Bbox([[0, -1], [1, 1]])
     tscale_out_box = T.Bbox([[0, 0], [1, offset_step]])
     tscale_in = T.BboxTransformFrom(tscale_in_box)
     tscale_out = T.BboxTransformTo(tscale_out_box)
 
-    boxes = {
+    minmax_in_bbox = T.Bbox([[0, 0], [1, 1]])
+    minmax_out_bbox = T.Bbox([[0, 0], [1, 1]])
+    minmax_in = T.BboxTransformFrom(minmax_in_bbox)
+    minmax_out = T.BboxTransformTo(minmax_out_bbox)
+
+    transforms = {
         'tscale': tscale_in_box,
         'tnorm': [],
         'norm_limits': limits/base_scale,
+        'minmax': minmax_out_bbox,
     }
 
     for i, waveform in enumerate(model.waveforms):
@@ -46,15 +55,18 @@ def plot_model(axes, model):
         tnorm_out_box = T.Bbox([[0, -1], [1, 1]])
         tnorm_in = T.BboxTransformFrom(tnorm_in_box)
         tnorm_out = T.BboxTransformTo(tnorm_out_box)
-        boxes['tnorm'].append(tnorm_in_box)
+        transforms['tnorm'].append(tnorm_in_box)
 
         offset = offset_step * i + offset_step * 0.5
-        translate = T.Affine2D().translate(0, offset)
+        translate = T.Affine2D().translate(1, offset)
+        #transforms['offsets'].append((i, translate))
 
         y_trans = bscale_in + bscale_out + \
             tnorm_in + tnorm_out + \
             tscale_in + tscale_out + \
-            translate + axes.transAxes
+            translate + \
+            minmax_in + minmax_out + \
+            axes.transAxes
         trans = T.blended_transform_factory(axes.transData, y_trans)
 
         plot = WaveformPlot(waveform, axes, trans)
@@ -68,7 +80,7 @@ def plot_model(axes, model):
     for spine in ('top', 'left', 'right'):
         axes.spines[spine].set_visible(False)
 
-    return plots, boxes
+    return plots, transforms
 
 
 class WaveformPresenter(Atom):
@@ -82,6 +94,8 @@ class WaveformPresenter(Atom):
     toggle = Property()
     scale = Property()
     normalized = Property()
+    top = Property()
+    bottom = Property()
     boxes = Dict()
 
 
@@ -173,6 +187,22 @@ class WaveformPresenter(Atom):
                 points = np.array([[0, -1], [1, 1]])
                 box.set_points(points)
         self.axes.set_title('normalized' if value else 'raw')
+        self.update()
+
+    def _get_top(self):
+        return self.boxes['minmax'].ymax
+
+    def _set_top(self, value):
+        points = np.array([[0, self.bottom], [1, value]])
+        self.boxes['minmax'].set_points(points)
+        self.update()
+
+    def _get_bottom(self):
+        return self.boxes['minmax'].ymin
+
+    def _set_bottom(self, value):
+        points = np.array([[0, value], [1, self.top]])
+        self.boxes['minmax'].set_points(points)
         self.update()
 
     def set_suprathreshold(self):
