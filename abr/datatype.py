@@ -187,29 +187,27 @@ class ABRSeries(object):
         raise AttributeError(f'{level} dB SPL not in series')
 
     def guess_p(self, latencies):
-        level_guesses = guess_iter(self.waveforms, latencies)
-        self._set_points(level_guesses, Point.PEAK)
+        guesses = guess_iter(self.waveforms, latencies)
+        self.set_points(guesses, Point.PEAK)
 
     def guess_n(self):
         n_latencies = {}
         for w in self.waveforms:
             g = {p.wave_number: p.x for p in w.points.values() if p.is_peak()}
             g = pd.DataFrame({'x': g})
-            n_latencies[w.level] = generate_latencies_bound(g)
+            n_latencies[w] = generate_latencies_bound(g)
         level_guesses = guess(self.waveforms, n_latencies, invert=True)
-        self._set_points(level_guesses, Point.VALLEY)
+        self.set_points(level_guesses, Point.VALLEY)
 
-    def update_guess(self, level, point):
-        waveform = self.get_level(level)
+    def update_guess(self, waveform, point):
         p = waveform.points[point]
         g = {p.wave_number: p.x}
         g = pd.DataFrame({'x': g})
         latencies = generate_latencies_skewnorm(g)
-
         i = self.waveforms.index(waveform)
         waveforms = self.waveforms[:i]
         level_guesses = guess_iter(waveforms, latencies, invert=p.is_valley())
-        self._set_points(level_guesses, p.point_type)
+        self.set_points(level_guesses, p.point_type)
 
     def clear_points(self):
         for waveform in self.waveforms:

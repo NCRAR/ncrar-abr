@@ -256,8 +256,7 @@ class WaveformPresenter(Atom):
         self.update()
 
     def update_point(self):
-        level = self.model.waveforms[self.current].level
-        self.model.update_guess(level, self.toggle)
+        self.model.update_guess(self.get_current_waveform(), self.toggle)
         self.update()
 
     def move_selected_point(self, step):

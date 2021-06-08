@@ -76,8 +76,8 @@ def guess_iter(waveforms, latencies, invert=False):
     guesses = {}
     for w in waveforms:
         metrics = find_peaks(w, invert=invert)
-        guesses[w.level] = guess_peaks(metrics, latencies)
-        latencies = generate_latencies_skewnorm(guesses[w.level])
+        guesses[w] = guess_peaks(metrics, latencies)
+        latencies = generate_latencies_skewnorm(guesses[w])
     return guesses
 
 
@@ -85,7 +85,7 @@ def guess(waveforms, latencies, invert=False):
     guesses = {}
     for w in waveforms:
         metrics = find_peaks(w, invert=invert)
-        guesses[w.level] = guess_peaks(metrics, latencies[w.level])
+        guesses[w] = guess_peaks(metrics, latencies[w])
     return guesses
 
 
