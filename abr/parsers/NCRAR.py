@@ -74,7 +74,7 @@ def load_metadata(filename):
 
     # Start time of stimulus in usec (since sampling period is reported in usec,
     # we should try to be consistent with all time units).
-    info['stimulus_start'] = 12.5e3
+    info['stimulus_start'] = 12.8e3
     return info
 
 
