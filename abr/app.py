@@ -1,5 +1,6 @@
 import argparse
 from collections import Counter
+import json
 from pathlib import Path
 
 from matplotlib import pylab as pl
@@ -12,9 +13,10 @@ import enaml
 from enaml.application import deferred_call
 from enaml.core.api import d_, Declarative
 from enaml.qt.qt_application import QtApplication
+from enaml.qt.QtCore import QStandardPaths
 
 with enaml.imports():
-    from abr.launch_window import LaunchWindow, SummarizeWindow
+    from abr.launch_window import LaunchWindow, Settings
     from abr.main_window import (CompareWindow, DNDWindow, load_files,
                                  SerialWindow)
     from abr.presenter import SerialWaveformPresenter, WaveformPresenter
@@ -30,6 +32,25 @@ P_LATENCIES = {
     4: stats.norm(4.0, 1),
     5: stats.norm(5.0, 2),
 }
+
+
+def config_file():
+    config_path = Path(QStandardPaths.standardLocations(QStandardPaths.GenericConfigLocation)[0])
+    config_file =  config_path / 'NCRAR' / 'abr' / 'config.json'
+    config_file.parent.mkdir(exist_ok=True, parents=True)
+    return config_file
+
+
+def read_config():
+    filename = config_file()
+    if not filename.exists():
+        return {}
+    return json.loads(filename.read_text())
+
+
+def write_config(config):
+    filename = config_file()
+    filename.write_text(json.dumps(config, indent=2))
 
 
 def add_default_arguments(parser, waves=True):
@@ -83,10 +104,15 @@ def parse_args(parser, waves=True):
 
 def main_launcher():
     app = QtApplication()
-    window = LaunchWindow()
+
+    settings = Settings()
+    settings.set_state(read_config())
+    window = LaunchWindow(settings=settings)
     window.show()
     app.start()
     app.stop()
+
+    write_config(settings.get_state())
 
 
 def main_summarize():
