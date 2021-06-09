@@ -57,8 +57,8 @@ def filter_string(waveform):
 
 
 def load_analysis(fname):
-    th_match = re.compile('Threshold \(dB SPL\): ([\w.]+)')
-    freq_match = re.compile('Frequency \(kHz\): ([\d.]+)')
+    th_match = re.compile(r'(?:# )?Threshold \(dB SPL\): ([-\w.]+)')
+    freq_match = re.compile(r'(?:# )?Frequency \(kHz\): ([\d.]+)')
     with open(fname) as fh:
         text = fh.readline()
         th = th_match.search(text).group(1)
@@ -67,7 +67,7 @@ def load_analysis(fname):
         freq = float(freq_match.search(text).group(1))
 
         for line in fh:
-            if line.startswith('NOTE'):
+            if line.startswith('NOTE') or line.startswith('# NOTE'):
                 break
         data = pd.io.parsers.read_csv(fh, sep='\t', index_col='Level')
         keep = [c for c in data.columns if not c.startswith('Unnamed')]
@@ -184,7 +184,10 @@ class Parser(object):
 
     def save(self, model):
         # Assume that all waveforms were filtered identically
-        filter_history = filter_string(model.waveforms[-1])
+        if model.meta is not None:
+            meta = '\n'.join(f'# {k}: {v}' for k, v in model.meta.items())
+        else:
+            meta = '#'
 
         # Generate list of columns
         columns = ['Level', '1msec Avg', '1msec StDev']
@@ -198,9 +201,9 @@ class Parser(object):
         spreadsheet = '\n'.join(waveform_string(w) for w in reversed(model.waveforms))
         content = CONTENT.format(threshold=model.threshold,
                                  frequency=model.freq*1e-3,
-                                 filter_history=filter_history,
                                  columns=columns,
-                                 spreadsheet=spreadsheet)
+                                 spreadsheet=spreadsheet,
+                                 metadata=meta)
 
         filename = self.get_save_filename(model.filename, model.freq)
         with open(filename, 'w') as fh:
@@ -247,10 +250,11 @@ class Parser(object):
 
 
 CONTENT = '''
-Threshold (dB SPL): {threshold:.2f}
-Frequency (kHz): {frequency:.2f}
-Filter history (zpk format): {filter_history}
-NOTE: Negative latencies indicate no peak
+# Threshold (dB SPL): {threshold:.2f}
+# Frequency (kHz): {frequency:.2f}
+# Version: 0.0.1
+{metadata}
+# NOTE: Negative latencies indicate no peak. NaN for amplitudes indicate peak was unscorable.
 {columns}
 {spreadsheet}
 '''.strip()

@@ -226,6 +226,13 @@ def get_actual_level(row, calibration):
     return result.iloc[0]['measured_level']
 
 
+def get_calibration_date(system, experiment_date, calibration):
+    matches = calibration.query('(system == @system) and (date <= @experiment_date)')
+    most_recent_calibration = matches['date'].max().date()
+    time_since_calibration = experiment_date - most_recent_calibration
+    return most_recent_calibration, time_since_calibration
+
+
 ################################################################################
 # API
 ################################################################################
@@ -249,6 +256,22 @@ def load(filename, filter, frequencies, calibration, latency, abr_window=8.5e-3)
     fs = 1/(info.iloc[0]['smp. period']*1e-6)
     data = load_waveforms(filename, info)
 
+    ihs_system = info.iloc[0]['system']
+    experiment_date = info.iloc[0]['date']
+
+    cal_date, time_since_cal = get_calibration_date(
+        ihs_system, experiment_date, calibration)
+
+    meta = {
+        'channel': 1,
+        'fs': fs,
+        'filter': str(filter),
+        'ihs_system': ihs_system,
+        'experiment_date': experiment_date.strftime('%Y%m%d'),
+        'calibration_date': cal_date.strftime('%Y%m%d'),
+        'days_since_calibration': int(time_since_cal.days),
+    }
+
     series = []
     for frequency, f_info in info.groupby('stim. freq.'):
         data = load_waveforms(filename, f_info)
@@ -258,7 +281,6 @@ def load(filename, filter, frequencies, calibration, latency, abr_window=8.5e-3)
             N = filter['order']
             b, a = signal.iirfilter(N, Wn)
             data[:] = signal.filtfilt(b, a, data.values, axis=0)
-            print('filtering')
 
         data = data.query('time >= 0')
 
@@ -270,7 +292,7 @@ def load(filename, filter, frequencies, calibration, latency, abr_window=8.5e-3)
             waveform = ABRWaveform(fs, d, row['actual_level'])
             waveforms.append(waveform)
 
-        s = ABRSeries(waveforms, frequency)
+        s = ABRSeries(waveforms, frequency, meta=meta)
         s.filename = filename
         series.append(s)
     return series
