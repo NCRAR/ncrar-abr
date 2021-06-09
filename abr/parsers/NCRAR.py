@@ -96,8 +96,7 @@ def load_metadata(filename, calibration=None):
     info['waveform'] = np.arange(len(info))
     info.set_index('waveform', inplace=True)
 
-    # Convert the intensity to the actual level in dB SPL
-    info['level'] = np.round(info.intensity/10)*10
+    info['level'] = info['intensity']
 
     # Store the scaling factor for the waveform so we can recover this when
     # loading.  By default the scaling factor is 674. For 110 dB SPL, the
