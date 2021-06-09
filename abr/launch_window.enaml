@@ -215,7 +215,8 @@ enamldef LaunchWindow(MainWindow): window:
         PushButton: b_basic:
             text = 'Launch basic'
             enabled << bool(settings.analyzer) and \
-                Path(settings.calibration_file).is_file()
+                Path(settings.calibration_file).is_file() and \
+                Path(settings.latency_file).is_file()
             clicked ::
                 settings.launch_basic()
 
@@ -223,7 +224,8 @@ enamldef LaunchWindow(MainWindow): window:
             text = 'Launch batch'
             enabled << bool(settings.analyzer) and \
                 bool(settings.study_folder) and \
-                Path(settings.calibration_file).is_file()
+                Path(settings.calibration_file).is_file() and \
+                Path(settings.latency_file).is_file()
             clicked ::
                 try:
                     settings.launch_batch()
