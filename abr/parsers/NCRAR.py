@@ -236,9 +236,9 @@ def get_calibration_date(system, experiment_date, calibration):
 def get_latencies(stim_freq, waves, latency_file):
     all_latencies = pd.read_excel(latency_file, sheet_name='latencies', header=[0, 1], index_col=0)
     all_latencies = all_latencies.rename(index={'click': 0, 'Click': 0})
-    latencies = all_latencies.loc[stim_freq].unstack('metric')
-    print(latencies)
-    latency_dict = latencies.apply(lambda x: stats.norm(x['mean'], x['sd']), axis=1).to_dict()
+    all_latencies.index *= 1e3
+    latencies = all_latencies.loc[stim_freq].unstack()
+    latency_dict = latencies.apply(lambda x: stats.norm(x['mean'], x['std']), axis=1).to_dict()
     return {w: latency_dict[w] for w in waves}
 
 
