@@ -278,9 +278,21 @@ def aggregate(study_directory, output_file):
         except KeyError:
             pass
 
+    cols = ['frequency'] + [c for c in waves.columns if c.startswith('P') and c.endswith('Latency')]
+    latencies = waves[cols].copy()
+    latency_summary = latencies.rename(columns={
+        'frequency': 'stimulus',
+        'P1 Latency': 1,
+        'P2 Latency': 2,
+        'P3 Latency': 3,
+        'P4 Latency': 4,
+        'P5 Latency': 5,
+    }).groupby('stimulus').agg(['mean', 'std'])
+
     with pd.ExcelWriter(output_file) as writer:
         thresholds.to_excel(writer, sheet_name='thresholds', index=False)
         waves.to_excel(writer, sheet_name='waves', index=False)
+        latency_summary.to_excel(writer, sheet_name='latencies')
 
 
 def main_aggregate():
