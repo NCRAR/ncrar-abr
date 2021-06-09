@@ -127,8 +127,8 @@ class Parser(object):
 
     filename_template = '{filename}-{frequency}kHz-{user}analyzed.txt'
 
-    def __init__(self, file_format, filter_settings, user, calibration=None,
-                 latency=None):
+    def __init__(self, file_format, filter_settings, user, waves=None,
+                 calibration=None, latency=None):
         '''
         Parameters
         ----------
@@ -151,12 +151,15 @@ class Parser(object):
         self._module = importlib.import_module(self._module_name)
         self._calibration = calibration
         self._latency = latency
-        print(self._calibration)
+        self._waves = [] if waves is None else waves[:]
 
     def load(self, filename, frequencies=None):
-        return self._module.load(filename, self._filter_settings, frequencies,
-                                 calibration=self._calibration,
-                                 latency=self._latency)
+        return self._module.load(filename,
+                                 self._filter_settings,
+                                 frequencies,
+                                 calibration_file=self._calibration,
+                                 latency_file=self._latency,
+                                 waves=self._waves)
 
     def load_analysis(self, series, filename):
         freq, th, peaks = load_analysis(filename)

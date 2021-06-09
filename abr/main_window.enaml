@@ -283,14 +283,14 @@ def add_dock_item(dock_area, model, path, presenter, analyzed_filenames):
     dock_area.update_layout(op)
 
 
-def load_files(parser, latencies, filenames, dock_area):
+def load_files(parser, filenames, dock_area):
     from abr.presenter import WaveformPresenter
     for filename, frequencies in filenames:
         for model in parser.load(filename, frequencies):
             try:
                 analyzed_filenames = \
                     parser.find_analyzed_files(model.filename, model.freq)
-                presenter = WaveformPresenter(parser, latencies)
+                presenter = WaveformPresenter(parser)
                 add_dock_item(dock_area, model, filename, presenter,
                               analyzed_filenames)
                 presenter.load(model)
@@ -302,7 +302,6 @@ def load_files(parser, latencies, filenames, dock_area):
 enamldef DNDWindow(MainWindow):
 
     attr parser
-    attr latencies
     icon = main_icon
 
     initial_size = (600, 900)
@@ -326,7 +325,7 @@ enamldef DNDWindow(MainWindow):
                     fragments = urllib.parse.urlsplit(t)
                     path = Path(urllib.request.url2pathname(fragments.path))
                     filenames.append((path, None))
-                load_files(parser, latencies, filenames, dock_area)
+                load_files(parser, filenames, dock_area)
 
 
 def mpl_connect(figure, event, handler):

@@ -98,7 +98,6 @@ class WaveformPresenter(Atom):
     bottom = Property()
     boxes = Dict()
 
-
     _current = Int()
     _toggle = Value()
     plots = List()
@@ -114,9 +113,8 @@ class WaveformPresenter(Atom):
         axes = self.figure.add_axes([0.1, 0.1, 0.8, 0.8])
         return axes
 
-    def __init__(self, parser, latencies):
+    def __init__(self, parser):
         self.parser = parser
-        self.latencies = latencies
 
     def load(self, model):
         self._current = 0
@@ -133,6 +131,8 @@ class WaveformPresenter(Atom):
         # Set current before toggle. Ordering is important.
         self.current = len(self.model.waveforms)-1
         self.toggle = None
+
+        self.latencies = model.suggested_latencies
         self.update()
 
     def save(self):
@@ -328,25 +328,26 @@ class SerialWaveformPresenter(WaveformPresenter):
     unprocessed = List()
     current_model = Int(-1)
 
-    def __init__(self, parser, latencies, unprocessed):
-        super().__init__(parser, latencies)
+    def __init__(self, parser, unprocessed):
+        super().__init__(parser)
         self.unprocessed = unprocessed
+
+    def load_model(self):
+        filename, frequency = self.unprocessed[self.current_model]
+        model = self.parser.load(filename, frequencies=[frequency])[0]
+        self.load(model)
 
     def load_prior(self):
         if self.current_model < 0:
             return
         self.current_model -= 1
-        filename, frequency = self.unprocessed[self.current_model]
-        model = self.parser.load(filename, frequencies=[frequency])[0]
-        self.load(model)
+        self.load_model()
 
     def load_next(self):
         if self.current_model >= len(self.unprocessed):
             return
         self.current_model += 1
-        filename, frequency = self.unprocessed[self.current_model]
-        model = self.parser.load(filename, frequencies=[frequency])[0]
-        self.load(model)
+        self.load_model()
 
     def save(self):
         super().save()

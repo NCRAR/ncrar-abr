@@ -172,12 +172,15 @@ class WaveformPoint(Atom):
 
 class ABRSeries(object):
 
-    def __init__(self, waveforms, freq=None, threshold=np.nan, meta=None):
+    def __init__(self, waveforms, freq, suggested_latencies, threshold=np.nan,
+                 meta=None):
+
         waveforms.sort(key=operator.attrgetter('level'))
         self.waveforms = waveforms
         self.freq = freq
         self.threshold = threshold
         self.meta = meta
+        self.suggested_latencies = suggested_latencies
         for waveform in self.waveforms:
             waveform.series = self
 

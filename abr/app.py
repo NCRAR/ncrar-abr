@@ -26,15 +26,6 @@ from abr import parsers
 from abr.parsers import Parser
 
 
-P_LATENCIES = {
-    1: stats.norm(1.5, 0.5),
-    2: stats.norm(2.5, 1),
-    3: stats.norm(3.0, 1),
-    4: stats.norm(4.0, 1),
-    5: stats.norm(5.0, 2),
-}
-
-
 def config_file():
     config_path = Path(QStandardPaths.standardLocations(QStandardPaths.GenericConfigLocation)[0])
     config_file =  config_path / 'NCRAR' / 'abr' / 'config.json'
@@ -89,11 +80,6 @@ def parse_args(parser, waves=True):
             'highpass': options.highpass,
             'order': options.order,
         }
-    new_options['parser'] = Parser(file_format=options.parser, 
-                                   filter_settings=filter_settings,
-                                   user=options.user, 
-                                   calibration=options.calibration,
-                                   latency=options.latency)
 
     if not waves:
         return new_options
@@ -104,7 +90,13 @@ def parse_args(parser, waves=True):
         waves = []
     else:
         waves = options.waves[:]
-    new_options['latencies'] = {w: P_LATENCIES[w] for w in waves}
+
+    new_options['parser'] = Parser(file_format=options.parser,
+                                   filter_settings=filter_settings,
+                                   user=options.user,
+                                   calibration=options.calibration,
+                                   waves=waves,
+                                   latency=options.latency)
     return new_options
 
 
@@ -131,12 +123,11 @@ def main_gui():
     options = parse_args(parser)
 
     app = QtApplication()
-    view = DNDWindow(parser=options['parser'], latencies=options['latencies'])
+    view = DNDWindow(parser=options['parser'])
 
     filenames = [(Path(f), None) for f in options['filenames']]
 
-    deferred_call(load_files, options['parser'], options['latencies'],
-                  filenames, view.find('dock_area'))
+    deferred_call(load_files, options['parser'], filenames, view.find('dock_area'))
 
     view.show()
     app.start()
@@ -174,9 +165,7 @@ def main_batch():
         return
 
     app = QtApplication()
-    presenter = SerialWaveformPresenter(parser=parser,
-                                        latencies=options['latencies'],
-                                        unprocessed=unprocessed)
+    presenter = SerialWaveformPresenter(parser=parser, unprocessed=unprocessed)
     view = SerialWindow(presenter=presenter)
     view.show()
     app.start()

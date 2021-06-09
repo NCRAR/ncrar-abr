@@ -2,7 +2,7 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from scipy import signal
+from scipy import signal, stats
 
 from abr.datatype import ABRWaveform, ABRSeries
 
@@ -233,23 +233,25 @@ def get_calibration_date(system, experiment_date, calibration):
     return most_recent_calibration, time_since_calibration
 
 
+def get_latencies(stim_freq, waves, latency_file):
+    all_latencies = pd.read_excel(latency_file, sheet_name='latencies', header=[0, 1], index_col=0)
+    all_latencies = all_latencies.rename(index={'click': 0, 'Click': 0})
+    latencies = all_latencies.loc[stim_freq].unstack('metric')
+    print(latencies)
+    latency_dict = latencies.apply(lambda x: stats.norm(x['mean'], x['sd']), axis=1).to_dict()
+    return {w: latency_dict[w] for w in waves}
+
+
 ################################################################################
 # API
 ################################################################################
+def load(filename, filter, frequencies, calibration_file, latency_file, waves,
+         abr_window=8.5e-3):
 
-# Minimum wave 1 latencies
-latencies = {
-    1000: 3.1,
-    3000: 2.1,
-    4000: 2.3,
-    6000: 1.8,
-}
-
-def load(filename, filter, frequencies, calibration, latency, abr_window=8.5e-3):
     if not is_ihs_file(filename):
         raise IOError('Unsupported file format')
 
-    calibration = load_calibration(calibration)
+    calibration = load_calibration(calibration_file)
     info = load_metadata(filename, calibration)
 
     info = info.query('channel == 1')
@@ -285,14 +287,14 @@ def load(filename, filter, frequencies, calibration, latency, abr_window=8.5e-3)
         data = data.query('time >= 0')
 
         waveforms = []
-        #min_latency = latencies.get(frequency)
-
         for i, row in f_info.iterrows():
             d = data[i]
             waveform = ABRWaveform(fs, d, row['actual_level'])
             waveforms.append(waveform)
 
-        s = ABRSeries(waveforms, frequency, meta=meta)
+        latencies = get_latencies(frequency, waves, latency_file)
+        s = ABRSeries(waveforms, frequency, suggested_latencies=latencies,
+                      meta=meta)
         s.filename = filename
         series.append(s)
     return series
