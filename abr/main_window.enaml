@@ -45,8 +45,6 @@ class Interactor:
         for i, line_plot in enumerate(self.presenter.plots):
             if line_plot.plot == event.artist:
                 self.presenter.current = i
-                if not self.presenter.threshold_marked:
-                    self.presenter.set_threshold()
             for point, point_plot in line_plot.point_plots.items():
                 if point_plot.plot == event.artist:
                     self.selected_point = point
@@ -67,12 +65,6 @@ class Interactor:
                 self.presenter.current -= 1
             elif event.key == 'up':
                 self.presenter.current += 1
-            elif event.key == 't':
-                self.presenter.set_threshold()
-            elif event.key == 'alt+up':
-                self.presenter.set_subthreshold()
-            elif event.key == 'alt+down':
-                self.presenter.set_suprathreshold()
             elif event.key in ('-', '_'):
                 self.presenter.scale *= 1.1
             elif event.key in ('=', '+'):
@@ -134,10 +126,9 @@ enamldef MPLContainer(Container): di:
 
     constraints = [
         vbox(
-            hbox(supra, sub, spacer, load, clear, unscorable),
+            hbox(spacer, load, clear, unscorable),
             canvas
         ),
-        supra.width == sub.width,
         load.width == 200,
     ]
 
@@ -206,18 +197,6 @@ enamldef MPLContainer(Container): di:
                 triggered::
                     presenter.mark_unscorable('all')
                     canvas.set_focus()
-
-    PushButton: supra:
-        text = 'All above threshold'
-        clicked ::
-            presenter.set_suprathreshold()
-            canvas.set_focus()
-
-    PushButton: sub:
-        text = 'All below threshold'
-        clicked ::
-            presenter.set_subthreshold()
-            canvas.set_focus()
 
     ABRCanvas: canvas:
         figure << presenter.figure
