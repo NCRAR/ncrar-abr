@@ -258,14 +258,23 @@ def aggregate(study_directory, output_file):
     output_file = Path(output_file).with_suffix('.xlsx')
     study_directory = Path(study_directory)
 
-    analyzed = list(study_directory.glob('**/*analyzed*.txt'))
+    analyzed = list(study_directory.glob('*analyzed*.txt'))
 
     keys = []
     thresholds = []
     waves = []
     for a in analyzed:
         f, th, w = parsers.load_analysis(a)
-        subject, _, analyzer, _ = a.stem.split('-')
+        #subject, _, analyzer, _ = a.stem.split('-')
+
+        parts = a.stem.split('-')
+        if parts[-2].endswith('kHz'):
+            analyzer = 'Unknown'
+            subject = '-'.join(parts[:-2])
+        else:
+            analyzer = parts[-2]
+            subject = '-'.join(parts[:-3])
+
         keys.append((subject, analyzer, f))
         thresholds.append(th)
         waves.append(w)
