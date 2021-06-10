@@ -275,6 +275,8 @@ def load(filename, filter, frequencies, calibration_file, latency_file, waves,
 
     series = []
     for frequency, f_info in info.groupby('stim. freq.'):
+        if frequency not in frequencies:
+            continue
         data = load_waveforms(filename, f_info)
 
         if filter is not None:

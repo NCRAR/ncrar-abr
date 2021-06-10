@@ -76,7 +76,10 @@ class Interactor:
                 self.presenter.update_point()
             elif event.key == 's':
                 self.presenter.save()
-                information(None, 'Data saved', 'Analysis saved to file.')
+                if not self.presenter.batch_mode:
+                    information(None, 'Data', 'Analysis saved to file.')
+                elif (self.presenter.current_model + 1) == len(self.presenter.unprocessed):
+                    information(None, 'Data', 'No more datasets to analyze.')
             elif event.key == 'right':
                 self.presenter.move_selected_point(('zero_crossing', 1))
             elif event.key == 'left':
@@ -227,17 +230,17 @@ enamldef SerialWindow(MainWindow):
     Container:
         constraints = [
             vbox(
-                hbox(label, progress),
-                container
+                label,
+                container,
             )
         ]
 
         Label: label:
-            text = 'Progress (n={})'.format(len(presenter.unprocessed))
-        ProgressBar: progress:
-            value << presenter.current_model
-            maximum << len(presenter.unprocessed)
-            text_visible = True
+            text << 'Progress ({} of {}): {} {} kHz' \
+                .format(presenter.current_model + 1,
+                        len(presenter.unprocessed),
+                        presenter.model.filename,
+                        presenter.model.freq)
 
         MPLContainer: container:
             padding = 0

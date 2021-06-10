@@ -109,6 +109,8 @@ class WaveformPresenter(Atom):
     parser = Value()
     latencies = Dict()
 
+    batch_mode = Bool(False)
+
     def _default_axes(self):
         axes = self.figure.add_axes([0.1, 0.1, 0.8, 0.8])
         return axes
@@ -325,6 +327,7 @@ class SerialWaveformPresenter(WaveformPresenter):
 
     unprocessed = List()
     current_model = Int(-1)
+    batch_mode = Bool(True)
 
     def __init__(self, parser, unprocessed):
         super().__init__(parser)
@@ -332,17 +335,18 @@ class SerialWaveformPresenter(WaveformPresenter):
 
     def load_model(self):
         filename, frequency = self.unprocessed[self.current_model]
+        print(filename, frequency)
         model = self.parser.load(filename, frequencies=[frequency])[0]
         self.load(model)
 
     def load_prior(self):
-        if self.current_model < 0:
+        if self.current_model < 1:
             return
         self.current_model -= 1
         self.load_model()
 
     def load_next(self):
-        if self.current_model >= len(self.unprocessed):
+        if self.current_model >= (len(self.unprocessed) - 1):
             return
         self.current_model += 1
         self.load_model()

@@ -16,6 +16,7 @@ from enaml.qt.qt_application import QtApplication
 from enaml.qt.QtCore import QStandardPaths
 
 with enaml.imports():
+    from enaml.stdlib.message_box import information
     from abr.launch_window import LaunchWindow, Settings
     from abr.main_window import (CompareWindow, DNDWindow, load_files,
                                  SerialWindow)
@@ -153,9 +154,6 @@ def main_batch():
     if options['shuffle']:
         random.shuffle(unprocessed)
 
-    if len(unprocessed) == 0:
-        print('No files to process')
-        return
 
     if options['list']:
         counts = Counter(f for f, _ in unprocessed)
@@ -165,6 +163,10 @@ def main_batch():
         return
 
     app = QtApplication()
+    if len(unprocessed) == 0:
+        information(None, 'Data', 'No datasets to process.')
+        return
+
     presenter = SerialWaveformPresenter(parser=parser, unprocessed=unprocessed)
     view = SerialWindow(presenter=presenter)
     view.show()
