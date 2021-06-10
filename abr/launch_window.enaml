@@ -218,7 +218,11 @@ enamldef LaunchWindow(MainWindow): window:
                 Path(settings.calibration_file).is_file() and \
                 Path(settings.latency_file).is_file()
             clicked ::
-                settings.launch_basic()
+                try:
+                    settings.launch_basic()
+                except Exception as e:
+                    mesg = 'Unable to start program.\n{}'.format(e)
+                    warning(window, 'Error', mesg)
 
         PushButton: b_loop:
             text = 'Launch batch'
@@ -229,8 +233,9 @@ enamldef LaunchWindow(MainWindow): window:
             clicked ::
                 try:
                     settings.launch_batch()
-                except ValueError as error:
-                    information(None, 'Unable to run batch', str(error))
+                except Exception as e:
+                    mesg = 'Unable to start program.\n{}'.format(e)
+                    warning(window, 'Error', mesg)
 
         PushButton: b_export:
             text = 'Export analysis'
@@ -240,11 +245,19 @@ enamldef LaunchWindow(MainWindow): window:
                     parent=window, current_path=settings.study_folder,
                     name_filters=['Excel Spreadsheet (*.xlsx)'])
                 if result:
-                    settings.launch_export(result)
-                    information(window, 'Results saved', f'Exported results to {result}')
+                    try:
+                        settings.launch_export(result)
+                        information(window, 'Results saved', f'Exported results to {result}')
+                    except Exception as e:
+                        mesg = 'Unable to start program.\n{}'.format(e)
+                        warning(window, 'Error', mesg)
 
         PushButton: b_compare:
             text = 'Compare raters'
             enabled << bool(settings.study_folder) and False
             clicked ::
-                settings.launch_compare()
+                try:
+                    settings.launch_compare()
+                except Exception as e:
+                    mesg = 'Unable to start program.\n{}'.format(e)
+                    warning(window, 'Error', mesg)
