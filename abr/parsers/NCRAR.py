@@ -285,7 +285,7 @@ def load(filename, filter, frequencies, calibration_file, latency_file, waves,
             b, a = signal.iirfilter(N, Wn)
             data[:] = signal.filtfilt(b, a, data.values, axis=0)
 
-        data = data.query('time >= 0')
+        data = data.query('time >= -1.5')
 
         waveforms = []
         for i, row in f_info.iterrows():

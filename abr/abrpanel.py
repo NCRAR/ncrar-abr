@@ -141,7 +141,7 @@ class WaveformPlot(StylePlot):
 
         # Create the plot
         self.plot, = self.axis.plot(self.waveform.x, self.waveform.y, 'k-',
-                                    transform=transform, clip_on=False,
+                                    transform=transform, clip_on=True,
                                     picker=10)
         self.update()
 

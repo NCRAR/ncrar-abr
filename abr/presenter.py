@@ -59,7 +59,6 @@ def plot_model(axes, model):
 
         offset = offset_step * i + offset_step * 0.5
         translate = T.Affine2D().translate(1, offset)
-        #transforms['offsets'].append((i, translate))
 
         y_trans = bscale_in + bscale_out + \
             tnorm_in + tnorm_out + \
@@ -80,6 +79,7 @@ def plot_model(axes, model):
     for spine in ('top', 'left', 'right'):
         axes.spines[spine].set_visible(False)
 
+    axes.axis(xmin=0)
     return plots, transforms
 
 

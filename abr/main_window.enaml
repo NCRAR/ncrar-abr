@@ -239,7 +239,7 @@ enamldef SerialWindow(MainWindow):
             text << 'Progress ({} of {}): {} {} kHz' \
                 .format(presenter.current_model + 1,
                         len(presenter.unprocessed),
-                        presenter.model.filename,
+                        os.path.basename(presenter.model.filename),
                         presenter.model.freq)
 
         MPLContainer: container:
@@ -259,7 +259,7 @@ def add_dock_item(dock_area, model, path, presenter, analyzed_filenames):
     items = dock_area.dock_items()
     n_items = len(items)
     target = items[-1].name if n_items else ''
-    title = '{:.2f} kHz - {}'.format(model.freq * 1e-3, os.path.basename(path))
+    title = '{} - {:.2f} kHz'.format(os.path.basename(path), model.freq * 1e-3)
     item = MPLDockItem(dock_area,
                        name='dock_{}'.format(n_items),
                        title=title,

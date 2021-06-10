@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from scipy import signal
 
-from atom.api import Atom, Bool, Int, Typed, Value
+from atom.api import Atom, Bool, Int, Property, Typed, Value
 
 from .peakdetect import (generate_latencies_bound, generate_latencies_skewnorm,
                          guess, guess_iter, peak_iterator)
@@ -73,7 +73,6 @@ class ABRWaveform:
             raise ValueError('Must provide either index or latency')
         elif latency is not None:
             index = np.searchsorted(self.x, latency)
-            index = np.clip(index, 0, len(self.x)-1)
 
         # Now, create point if it does not exist
         if (wave, ptype) not in self.points:
@@ -113,7 +112,8 @@ class WaveformPoint(Atom):
     TODO
     '''
     parent = Typed(ABRWaveform)
-    index = Int()
+    _index = Int()
+    index = Property()
     wave_number = Int()
     point_type = Typed(Point)
     iterator = Value()
@@ -130,7 +130,7 @@ class WaveformPoint(Atom):
         self.iterator = iterator
         self.index = index
 
-    def _observe_index(self, event):
+    def _observe__index(self, event):
         if event['type'] == 'update':
             self.iterator.send(('set', event['value']))
 
@@ -147,6 +147,15 @@ class WaveformPoint(Atom):
 
     def is_valley(self):
         return self.point_type == Point.VALLEY
+
+    def _get_index(self):
+        return self._index
+
+    def _set_index(self, index):
+        # This makes sure we cannot have negative latencies
+        if self.parent.x[index] < 0:
+            index = np.searchsorted(self.parent.x, 0)
+        self._index = int(np.clip(index, 0, len(self.parent.x)-1))
 
     @property
     def latency(self):

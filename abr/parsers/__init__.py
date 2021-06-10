@@ -40,8 +40,8 @@ def get_analyzer(filename):
 
 def waveform_string(waveform):
     data = [f'{waveform.level:.2f}']
-    data.append(f'{waveform.mean(0, 1)}')
-    data.append(f'{waveform.std(0, 1)}')
+    data.append(f'{waveform.mean(-1, 0)}')
+    data.append(f'{waveform.std(-1, 0)}')
     for _, point in sorted(waveform.points.items()):
         data.append(f'{point.latency:.8f}')
         data.append(f'{point.amplitude:.8f}')
@@ -193,7 +193,7 @@ class Parser(object):
             meta = '#'
 
         # Generate list of columns
-        columns = ['Level', '1msec Avg', '1msec StDev']
+        columns = ['Level', 'Avg 1msec Baseline', 'StDev 1msec Baseline']
         point_keys = sorted(model.waveforms[0].points)
         for point_number, point_type in point_keys:
             point_type_code = 'P' if point_type == Point.PEAK else 'N'
