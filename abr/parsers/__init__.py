@@ -35,7 +35,10 @@ P_ANALYZER = re.compile('.*kHz(?:-(\w+))?-analyzed.txt')
 
 
 def get_analyzer(filename):
-    return P_ANALYZER.match(filename.name).group(1)
+    result = P_ANALYZER.match(filename.name).group(1)
+    if result == None:
+        return 'Unknown'
+    return result
 
 
 def waveform_string(waveform):
@@ -56,6 +59,11 @@ def filter_string(waveform):
     return '\n' + '\n'.join(filt)
 
 
+def _add_replicate(x):
+    x['Replicate'] = range(len(x))
+    return x
+
+
 def load_analysis(fname):
     th_match = re.compile(r'(?:# )?Threshold \(dB SPL\): ([-\w.]+)')
     freq_match = re.compile(r'(?:# )?Frequency \(kHz\): ([\d.]+)')
@@ -72,6 +80,7 @@ def load_analysis(fname):
         data = pd.io.parsers.read_csv(fh, sep='\t', index_col='Level')
         keep = [c for c in data.columns if not c.startswith('Unnamed')]
         data = data[keep]
+        data = data.groupby('Level').apply(_add_replicate).set_index('Replicate', append=True)
     return (freq, th, data)
 
 
@@ -212,8 +221,8 @@ class Parser(object):
         with open(filename, 'w') as fh:
             fh.writelines(content)
 
-    def find_all(self, dirname, frequencies=None):
-        result = self._module.find_all(dirname, self._filter_settings,
+    def find_all(self, study_directory, frequencies=None):
+        result = self._module.find_all(study_directory, self._filter_settings,
                                        frequencies=frequencies)
         if frequencies is not None:
             if np.isscalar(frequencies):
@@ -221,35 +230,47 @@ class Parser(object):
             result = [(p, f) for (p, f) in result if f in frequencies]
         return result
 
-    def find_processed(self, dirname, frequencies=None):
-        return [(p, f) for p, f in self.find_all(dirname, frequencies) \
+    def find_processed(self, study_directory, frequencies=None):
+        return [(p, f) for p, f in self.find_all(study_directory, frequencies) \
                 if self.get_save_filename(p, f).exists()]
 
-    def find_unprocessed(self, dirname, frequencies=None):
+    def find_unprocessed(self, study_directory, frequencies=None):
         # k is tuple of path, frequency
-        iterator = self.find_all(dirname, frequencies=frequencies)
+        iterator = self.find_all(study_directory, frequencies=frequencies)
         return [k for k in iterator if not self.get_save_filename(*k).exists()]
 
-    def find_analyses(self, dirname, frequencies=None):
+    def find_analyses(self, study_directory, frequencies=None):
         analyzed = {}
-        for p, f in self.find_all(dirname, frequencies):
+        for p, f in self.find_all(study_directory, frequencies):
             analyzed[p, f] = self.find_analyzed_files(p, f)
         return analyzed
 
-    def load_analyses(self, dirname, frequencies=None):
-        analyzed = self.find_analyses(dirname, frequencies)
+    def load_analyses(self, study_directory, frequencies=None):
         keys = []
         thresholds = []
-        for (raw_file, frequency), analyzed_files in analyzed.items():
-            for analyzed_file in analyzed_files:
-                user = get_analyzer(analyzed_file)
-                keys.append((raw_file, frequency, analyzed_file, user))
-                _, threshold, _ = load_analysis(analyzed_file)
-                thresholds.append(threshold)
+        waves = []
+        analyses = self.find_analyses(study_directory, frequencies)
 
-        cols = ['raw_file', 'frequency', 'analyzed_file', 'user']
-        index = pd.MultiIndex.from_tuples(keys, names=cols)
-        return pd.Series(thresholds, index=index)
+        for (filename, f), analyzed_filenames in analyses.items():
+            for a in analyzed_filenames:
+                f, th, w = load_analysis(a)
+                print(f)
+                parts = a.stem.split('-')
+                if parts[-2].endswith('kHz'):
+                    analyzer = 'Unknown'
+                    subject = '-'.join(parts[:-2])
+                else:
+                    analyzer = parts[-2]
+                    subject = '-'.join(parts[:-3])
+
+                keys.append((filename, subject, analyzer, f))
+                thresholds.append(th)
+                waves.append(w)
+
+        index = pd.MultiIndex.from_tuples(keys, names=['filename', 'subject', 'analyzer', 'frequency'])
+        thresholds = pd.Series(thresholds, index=index, name='thresholds').reset_index()
+        waves = pd.concat(waves, keys=keys, names=['filename', 'subject', 'analyzer', 'frequency']).reset_index()
+        return thresholds, waves
 
 
 CONTENT = '''

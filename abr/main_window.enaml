@@ -1,10 +1,13 @@
+import logging
+log = logging.getLogger(__name__)
+
 import os.path
 from pathlib import Path
 import urllib.request
 
 from enaml.application import deferred_call
 from enaml.core.api import Looper
-from enaml.layout.api import hbox, InsertItem, InsertTab, spacer, vbox
+from enaml.layout.api import align, hbox, InsertItem, InsertTab, spacer, vbox
 from enaml.qt.QtCore import Qt
 from enaml.stdlib.dialog_buttons import DialogButton
 from enaml.stdlib.message_box import critical, information, warning
@@ -255,34 +258,50 @@ enamldef MPLDockItem(DockItem):
         pass
 
 
+def fmt_freq(x):
+    if x == 0:
+        return 'click'
+    return f'{x * 1e-3:.2f} kHz'
+
+
 def add_dock_item(dock_area, model, path, presenter, analyzed_filenames):
+    title = '{} - {}'.format(os.path.basename(path), fmt_freq(model.freq))
+    name = title.replace(' ', '_')
     items = dock_area.dock_items()
+    item_titles = [item.title for item in items]
+    if title in item_titles:
+        raise ValueError('File is already open')
+
     n_items = len(items)
     target = items[-1].name if n_items else ''
-    title = '{} - {:.2f} kHz'.format(os.path.basename(path), model.freq * 1e-3)
+    print(title, target)
     item = MPLDockItem(dock_area,
-                       name='dock_{}'.format(n_items),
+                       name=name,
                        title=title,
                        presenter=presenter,
                        analyzed_filenames=analyzed_filenames)
     op = InsertTab(item=item.name, target=target)
-    dock_area.update_layout(op)
+    deferred_call(dock_area.update_layout, op)
 
 
 def load_files(parser, filenames, dock_area):
     from abr.presenter import WaveformPresenter
+    messages = []
     for filename, frequencies in filenames:
         try:
             for model in parser.load(filename, frequencies):
-                    analyzed_filenames = \
-                        parser.find_analyzed_files(model.filename, model.freq)
+                try:
+                    analyzed_filenames = parser.find_analyzed_files(model.filename, model.freq)
                     presenter = WaveformPresenter(parser)
-                    add_dock_item(dock_area, model, filename, presenter,
-                                analyzed_filenames)
+                    add_dock_item(dock_area, model, filename, presenter, analyzed_filenames)
                     presenter.load(model)
+                except Exception as e:
+                    messages.append(f'{filename} {fmt_freq(model.freq)}: {e}')
         except Exception as e:
-            mesg = f'Could not load ABR data\n{e}'
-            critical(None, 'Could not load file', mesg)
+            messages.append(f'{filename}: {e}')
+
+    if messages:
+        critical(None, 'Files', '\n'.join(messages))
 
 
 enamldef DNDWindow(MainWindow):
@@ -323,59 +342,70 @@ enamldef CompareWindow(MainWindow):
     attr compare
     attr parser
 
-    initial_size = (1000, 600)
+    initial_size = (1000, 800)
     icon = main_icon
 
     initialized ::
-        compare.observe('selected', selected_changed)
+        compare.observe('selected_points_updated', selected_changed)
 
     func selected_changed(event):
-        load_files(parser, {}, event['value'], dock_area)
+        load_files(parser, compare.selected_points, dock_area)
 
     Container:
 
-        constraints = [
-            hbox(
-                vbox(
-                    hbox(x_label, x_select),
-                    hbox(y_label, y_select),
-                    hbox(d_label, d_checkbox),
-                    hbox(j_label, j_checkbox),
-                    canvas,
+        layout_constraints => ():
+            first_line = [show_label, feature, for_label, x_select, and1_label, y_select]
+            second_line = [plotas_label, plot_mode, and2_label, jitter_mode]
+            return [
+                hbox(
+                    vbox(
+                        hbox(*first_line),
+                        hbox(*second_line),
+                        canvas,
+                    ),
+                    dock_area,
                 ),
-                dock_area
-            ),
-            x_label.width == y_label.width,
-            x_label.width == d_label.width,
-            x_label.width == j_label.width,
-            x_select.width == y_select.width
-        ]
+                align('v_center', *first_line),
+                align('v_center', *second_line),
+                x_select.width == y_select.width,
+            ]
 
-        Label: x_label:
-            text = 'X'
+        ObjectCombo: feature:
+            items << compare.available_features
+            selected := compare.selected_feature
+
+        Label: show_label:
+            text = 'Show'
+
+        Label: for_label:
+            text = 'for rater'
+
+        Label: and1_label:
+            text = 'and'
 
         ObjectCombo: x_select:
-            items << list(compare.data.columns)
-            selected := compare.x_column
-
-        Label: y_label:
-            text = 'Y'
+            items << compare.available_raters
+            selected := compare.rater_x
 
         ObjectCombo: y_select:
-            items << list(compare.data.columns)
-            selected := compare.y_column
+            items << compare.available_raters
+            selected := compare.rater_y
 
-        Label: d_label:
-            text = 'Plot as difference'
+        Label: plotas_label:
+            text = 'Plot as'
 
-        CheckBox: d_checkbox:
-            checked := compare.as_difference
+        ObjectCombo: plot_mode:
+            items << ['actual values', 'difference between raters']
+            selected ::
+                compare.as_difference = not(selected == 'actual values')
 
-        Label: j_label:
-            text = 'Jitter data'
+        Label: and2_label:
+            text = 'and'
 
-        CheckBox: j_checkbox:
-            checked := compare.jitter
+        ObjectCombo: jitter_mode:
+            items << ["don't jitter data", "jitter data"]
+            selected ::
+                compare.jitter = selected == 'jitter data'
 
         ABRCanvas: canvas:
             figure << compare.figure

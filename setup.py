@@ -45,7 +45,7 @@ setup(
             'abr-aggregate = abr.app:main_aggregate',
             'abr-gui = abr.app:main_gui',
             'abr-batch = abr.app:main_batch',
-            'abr-compare = abr.app:main_compare',
+            'abr-compare = abr.compare:main',
         ]
     },
 )

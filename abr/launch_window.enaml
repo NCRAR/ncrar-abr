@@ -39,7 +39,7 @@ class Settings(Atom):
             except AttributeError:
                 pass
 
-    def get_default_args(self):
+    def get_default_args(self, waves=True):
         args = ['--parser', self.parser, '--user', self.analyzer,
                 '--calibration', self.calibration_file, '--latency',
                 self.latency_file]
@@ -48,11 +48,12 @@ class Settings(Atom):
             args.extend(['--lowpass', str(self.filter_ub)])
         else:
             args.append('--nofilter')
-        if self.waves:
-            args.append('--waves')
-            args.extend(str(w) for w in self.waves)
-        else:
-            args.append('--threshold-only')
+        if waves:
+            if self.waves:
+                args.append('--waves')
+                args.extend(str(w) for w in self.waves)
+            else:
+                args.append('--threshold-only')
         return args
 
     def launch_basic(self):
@@ -70,6 +71,11 @@ class Settings(Atom):
 
     def launch_export(self, output_file):
         args = ['abr-aggregate', self.study_folder, output_file]
+        result = subprocess.check_output(args)
+
+    def launch_compare(self):
+        args = ['abr-compare', self.study_folder]
+        args.extend(self.get_default_args(waves=False))
         result = subprocess.check_output(args)
 
 
@@ -254,7 +260,7 @@ enamldef LaunchWindow(MainWindow): window:
 
         PushButton: b_compare:
             text = 'Compare raters'
-            enabled << bool(settings.study_folder) and False
+            enabled << bool(settings.study_folder)
             clicked ::
                 try:
                     settings.launch_compare()

@@ -8,18 +8,16 @@ from numpy import random
 import pandas as pd
 from scipy import stats
 
-from atom.api import Bool, Typed, Str
+
 import enaml
 from enaml.application import deferred_call
-from enaml.core.api import d_, Declarative
 from enaml.qt.qt_application import QtApplication
 from enaml.qt.QtCore import QStandardPaths
 
 with enaml.imports():
     from enaml.stdlib.message_box import information
     from abr.launch_window import LaunchWindow, Settings
-    from abr.main_window import (CompareWindow, DNDWindow, load_files,
-                                 SerialWindow)
+    from abr.main_window import (CompareWindow, DNDWindow, load_files, SerialWindow)
     from abr.presenter import SerialWaveformPresenter, WaveformPresenter
 
 
@@ -82,15 +80,15 @@ def parse_args(parser, waves=True):
             'order': options.order,
         }
 
-    if not waves:
-        return new_options
-
-    if options.all_waves:
-        waves = [1, 2, 3, 4, 5]
-    elif options.threshold_only:
-        waves = []
+    if waves:
+        if options.all_waves:
+            waves = [1, 2, 3, 4, 5]
+        elif options.threshold_only:
+            waves = []
+        else:
+            waves = options.waves[:]
     else:
-        waves = options.waves[:]
+        waves = []
 
     new_options['parser'] = Parser(file_format=options.parser,
                                    filter_settings=filter_settings,
@@ -154,7 +152,6 @@ def main_batch():
     if options['shuffle']:
         random.shuffle(unprocessed)
 
-
     if options['list']:
         counts = Counter(f for f, _ in unprocessed)
         for filename, n in counts.items():
@@ -174,90 +171,9 @@ def main_batch():
     app.stop()
 
 
-class Compare(Declarative):
-
-    data = Typed(pd.DataFrame)
-    x_column = d_(Str())
-    y_column = d_(Str())
-    as_difference = d_(Bool(True))
-    jitter = d_(Bool(True))
-    axes = Typed(pl.Axes)
-    figure = Typed(pl.Figure)
-    selected = Typed(list)
-
-    def _default_figure(self):
-        return pl.Figure()
-
-    def _default_axes(self):
-        return self.figure.add_subplot(111)
-
-    def _observe_data(self, event):
-        self._update_plot()
-
-    def _observe_x_column(self, event):
-        self._update_plot()
-
-    def _observe_y_column(self, event):
-        self._update_plot()
-
-    def _observe_as_difference(self, event):
-        self._update_plot()
-
-    def _observe_jitter(self, event):
-        self._update_plot()
-
-    def _default_x_column(self):
-        return self.data.columns[0]
-
-    def _default_y_column(self):
-        i = 1 if (len(self.data.columns) > 1) else 0
-        return self.data.columns[i]
-
-    def _update_plot(self):
-        x = self.data[self.x_column].copy()
-        y = self.data[self.y_column].copy()
-        if self.as_difference:
-            y -= x
-        if self.jitter:
-            x += np.random.uniform(-1, 1, len(x))
-            y += np.random.uniform(-1, 1, len(x))
-
-        self.axes.clear()
-        self.axes.plot(x, y, 'ko', picker=4, mec='w', mew=1)
-        if self.figure.canvas is not None:
-            self.figure.canvas.draw()
-
-    def pick_handler(self, event):
-        rows = self.data.iloc[event.ind]
-        files = list(rows.index.get_level_values('raw_file'))
-        frequencies = list(rows.index.get_level_values('frequency'))
-        self.selected = list(zip(files, frequencies))
-
-
-def main_compare():
-    parser = argparse.ArgumentParser("abr_compare")
-    add_default_arguments(parser, waves=False)
-    parser.add_argument('directory')
-    options = parse_args(parser, waves=False)
-
-    data = options['parser'].load_analyses(options['directory'])
-    data = data.reset_index(['analyzed_file'], drop=True).unstack('user')
-    data = data.sort_index()
-
-    figure, axes = pl.subplots(1, 1)
-    compare = Compare(data=data)
-
-    app = QtApplication()
-    view = CompareWindow(parser=options['parser'], compare=compare)
-    view.show()
-    app.start()
-    app.stop()
-
-
 def aggregate(study_directory, output_file):
     output_file = Path(output_file).with_suffix('.xlsx')
     study_directory = Path(study_directory)
-
     analyzed = list(study_directory.glob('*analyzed*.txt'))
 
     keys = []
@@ -265,7 +181,6 @@ def aggregate(study_directory, output_file):
     waves = []
     for a in analyzed:
         f, th, w = parsers.load_analysis(a)
-        #subject, _, analyzer, _ = a.stem.split('-')
 
         parts = a.stem.split('-')
         if parts[-2].endswith('kHz'):

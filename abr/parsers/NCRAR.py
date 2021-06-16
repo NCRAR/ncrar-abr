@@ -247,6 +247,9 @@ def get_latencies(stim_freq, waves, latency_file):
 def load(filename, filter, frequencies, calibration_file, latency_file, waves,
          abr_window=8.5e-3):
 
+    if frequencies is not None and not np.iterable(frequencies):
+        frequencies = [frequencies]
+
     if not is_ihs_file(filename):
         raise IOError('Unsupported file format')
 
