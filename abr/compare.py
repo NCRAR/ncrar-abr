@@ -86,19 +86,25 @@ class Compare(Declarative):
             x += np.random.uniform(-bound, bound, len(x))
             y += np.random.uniform(-bound, bound, len(x))
 
-        print(x)
         for (filename, frequency), _ in data.groupby(['filename', 'frequency']):
             xd = x.xs(filename, level='filename').xs(frequency, level='frequency')
             yd = y.xs(filename, level='filename').xs(frequency, level='frequency')
-            l, = self.axes.plot(xd, yd, 'o', picker=4, mec='w', mew=1)
+            l, = self.axes.plot(xd, yd, 'o', mec='w', mew=1)
             self.plot_map[l] = filename, frequency
 
         if self.figure.canvas is not None:
             self.figure.canvas.draw()
 
-    def pick_handler(self, event):
-        filename, frequency = self.plot_map[event.artist]
-        self.selected_points = [(filename, frequency * 1e3)]
+    def button_press_event(self, event):
+        if not event.inaxes:
+            return
+        selected = []
+        for plot, (filename, frequency) in self.plot_map.items():
+            if plot.contains(event)[0]:
+                key = (filename, frequency * 1e3)
+                if key not in selected:
+                    selected.append(key)
+        self.selected_points = selected
         self.selected_points_updated = True
 
 

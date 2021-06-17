@@ -71,8 +71,8 @@ class PointPlot(StylePlot):
         self.figure = figure
         self.parent = parent
         self.point = point
-        self.plot, = self.figure.plot(0, 0, transform=parent.transform,
-                                      clip_on=False, picker=10)
+        self.plot, = self.figure.plot(0, 0, transform=parent.transform, clip_on=False, picker=True)
+        self.plot.set
         self.current = False
         self.update()
 
@@ -142,7 +142,7 @@ class WaveformPlot(StylePlot):
         # Create the plot
         self.plot, = self.axis.plot(self.waveform.x, self.waveform.y, 'k-',
                                     transform=transform, clip_on=True,
-                                    picker=10)
+                                    picker=True)
         self.update()
 
     STYLE = {

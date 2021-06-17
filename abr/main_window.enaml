@@ -274,7 +274,6 @@ def add_dock_item(dock_area, model, path, presenter, analyzed_filenames):
 
     n_items = len(items)
     target = items[-1].name if n_items else ''
-    print(title, target)
     item = MPLDockItem(dock_area,
                        name=name,
                        title=title,
@@ -410,8 +409,8 @@ enamldef CompareWindow(MainWindow):
         ABRCanvas: canvas:
             figure << compare.figure
             initialized ::
-                deferred_call(mpl_connect, compare.figure, 'pick_event',
-                              compare.pick_handler)
+                deferred_call(mpl_connect, compare.figure, 'button_press_event',
+                              compare.button_press_event)
 
         DockArea: dock_area:
             name = 'dock_area'
