@@ -254,7 +254,6 @@ class Parser(object):
         for (filename, f), analyzed_filenames in analyses.items():
             for a in analyzed_filenames:
                 f, th, w = load_analysis(a)
-                print(f)
                 parts = a.stem.split('-')
                 if parts[-2].endswith('kHz'):
                     analyzer = 'Unknown'
