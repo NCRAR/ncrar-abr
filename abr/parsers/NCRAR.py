@@ -291,10 +291,11 @@ def load(filename, filter, frequencies, calibration_file, latency_file, waves,
         data = data.query('time >= -1.5')
 
         waveforms = []
-        for i, row in f_info.iterrows():
-            d = data[i]
-            waveform = ABRWaveform(fs, d, row['actual_level'])
-            waveforms.append(waveform)
+        for level, l_df in f_info.groupby('actual_level'):
+            for replicate, (i, row) in enumerate(l_df.iterrows()):
+                d = data[i]
+                waveform = ABRWaveform(fs, d, level=level, replicate=replicate, channel=1)
+                waveforms.append(waveform)
 
         latencies = get_latencies(frequency, waves, latency_file)
         s = ABRSeries(waveforms, frequency, suggested_latencies=latencies,

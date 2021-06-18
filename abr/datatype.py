@@ -29,10 +29,12 @@ class Point(Enum):
 
 class ABRWaveform:
 
-    def __init__(self, fs, signal, level):
+    def __init__(self, fs, signal, level, replicate=0, channel=1):
         self.fs = fs
         self.signal = signal
         self.level = level
+        self.replicate = replicate
+        self.channel = channel
         self.points = {}
         self.series = None
 

@@ -110,13 +110,21 @@ class WaveformPresenter(Atom):
     latencies = Dict()
 
     batch_mode = Bool(False)
+    interactive = Bool(True)
+    modified = Bool(False)
 
     def _default_axes(self):
         axes = self.figure.add_axes([0.1, 0.1, 0.8, 0.8])
         return axes
 
-    def __init__(self, parser):
+    def __init__(self, parser, interactive=True):
         self.parser = parser
+        self.interactive = interactive
+
+    def clear(self):
+        for artist in self.axes.lines + self.axes.collections:
+            artist.remove()
+        self.update()
 
     def load(self, model):
         self._current = 0
@@ -136,12 +144,14 @@ class WaveformPresenter(Atom):
 
         self.latencies = model.suggested_latencies
         self.update()
+        self.modified = False
 
     def save(self):
         if self.latencies:
             if not self.peaks_marked or not self.valleys_marked:
                 raise ValueError('Waves not identified')
         self.parser.save(self.model)
+        self.modified = False
 
     def update(self):
         for p in self.plots:
@@ -219,6 +229,7 @@ class WaveformPresenter(Atom):
         if self.latencies and not self.peaks_marked:
             self.guess()
         self.update()
+        self.modified = True
 
     def _get_toggle(self):
         return self._toggle
@@ -254,6 +265,7 @@ class WaveformPresenter(Atom):
         self.current = len(self.model.waveforms)-1
         self.toggle = 1, ptype
         self.update()
+        self.modified = True
 
     def update_point(self):
         self.model.update_guess(self.get_current_waveform(), self.toggle)
@@ -263,6 +275,7 @@ class WaveformPresenter(Atom):
         point = self.get_current_point()
         point.move(step)
         self.update()
+        self.modified = True
 
     def set_selected_point(self, time):
         try:
@@ -278,6 +291,7 @@ class WaveformPresenter(Atom):
             point = self.get_current_point()
             point.unscorable = not point.unscorable
             self.update()
+            self.modified = True
         except:
             pass
 
@@ -290,6 +304,7 @@ class WaveformPresenter(Atom):
                     if waveform.level <= self.get_current_waveform().level:
                         waveform.points[self.toggle].unscorable = True
             self.update()
+            self.modified = True
         except:
             pass
 
@@ -304,16 +319,19 @@ class WaveformPresenter(Atom):
         self.peaks_marked = False
         self.valleys_marked = False
         self.update()
+        self.modified = True
 
     def clear_peaks(self):
         self.model.clear_peaks()
         self.peaks_marked = False
         self.update()
+        self.modified = True
 
     def clear_valleys(self):
         self.model.clear_valleys()
         self.valleys_marked = False
         self.update()
+        self.modified = True
 
     def load_analysis(self, filename):
         self.clear_points()
@@ -321,6 +339,19 @@ class WaveformPresenter(Atom):
         self.peaks_marked = True
         self.valleys_marked = True
         self.update()
+        self.modified = True
+
+    def select_waveform(self, level, replicate, channel=1):
+        for i, waveform in enumerate(self.model.waveforms):
+            if waveform.level == level and waveform.replicate == replicate:
+                self.current = i
+
+    def select_point(self, point):
+        number = int(point[1])
+        if point[0] == 'P':
+            self.toggle = number, Point.PEAK
+        else:
+            self.toggle = number, Point.VALLEY
 
 
 class SerialWaveformPresenter(WaveformPresenter):
@@ -335,7 +366,6 @@ class SerialWaveformPresenter(WaveformPresenter):
 
     def load_model(self):
         filename, frequency = self.unprocessed[self.current_model]
-        print(filename, frequency)
         model = self.parser.load(filename, frequencies=[frequency])[0]
         self.load(model)
 

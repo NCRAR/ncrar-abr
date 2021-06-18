@@ -262,13 +262,13 @@ class Parser(object):
                     analyzer = parts[-2]
                     subject = '-'.join(parts[:-3])
 
-                keys.append((filename, subject, analyzer, f))
+                keys.append((filename, a, subject, analyzer, f))
                 thresholds.append(th)
                 waves.append(w)
 
-        index = pd.MultiIndex.from_tuples(keys, names=['filename', 'subject', 'analyzer', 'frequency'])
+        index = pd.MultiIndex.from_tuples(keys, names=['filename', 'analyzed_filename', 'subject', 'analyzer', 'frequency'])
         thresholds = pd.Series(thresholds, index=index, name='thresholds').reset_index()
-        waves = pd.concat(waves, keys=keys, names=['filename', 'subject', 'analyzer', 'frequency']).reset_index()
+        waves = pd.concat(waves, keys=keys, names=['filename', 'analyzed_filename', 'subject', 'analyzer', 'frequency']).reset_index()
         return thresholds, waves
 
 
