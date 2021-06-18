@@ -6,6 +6,8 @@ import sys
 
 from setuptools import find_packages, setup
 
+import versioneer
+
 with open(os.path.join(os.path.dirname(__file__), 'README.md')) as f:
     readme = f.read()
 
@@ -28,7 +30,6 @@ classifiers = [
 
 setup(
     name='ABR',
-    version='0.0.3',
     author='Brad Buran',
     author_email='bburan@alum.mit.edu',
     description='ABR wave analyzer',
@@ -48,4 +49,6 @@ setup(
             'abr-compare = abr.compare:main',
         ]
     },
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
 )
