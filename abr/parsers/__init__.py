@@ -43,9 +43,11 @@ def get_analyzer(filename):
 
 
 def waveform_string(waveform):
-    data = [f'{waveform.level:.2f}']
-    data.append(f'{waveform.mean(-1, 0)}')
-    data.append(f'{waveform.std(-1, 0)}')
+    data = [f'{waveform.level:5}',
+            f'{waveform.replicate:9}',
+            f'{waveform.channel:7}']
+    data.append(f'{waveform.mean(-1, 0):18}')
+    data.append(f'{waveform.std(-1, 0):18}')
     for _, point in sorted(waveform.points.items()):
         data.append(f'{point.latency:.8f}')
         data.append(f'{point.amplitude:.8f}')
@@ -81,7 +83,14 @@ def load_analysis(fname):
         data = pd.io.parsers.read_csv(fh, sep='\t', index_col='Level')
         keep = [c for c in data.columns if not c.startswith('Unnamed')]
         data = data[keep]
-        data = data.groupby('Level').apply(_add_replicate).set_index('Replicate', append=True)
+        if 'Replicate' not in data:
+            data = data.groupby('Level').apply(_add_replicate).set_index('Replicate', append=True)
+        else:
+            data = data.set_index('Replicate', append=True)
+        if 'Channel' not in data:
+            data['Channel'] = 1
+        data = data.set_index('Channel', append=True)
+
     return (freq, th, data)
 
 
@@ -203,7 +212,7 @@ class Parser(object):
             meta = '#'
 
         # Generate list of columns
-        columns = ['Level', 'Avg 1msec Baseline', 'StDev 1msec Baseline']
+        columns = ['Level', 'Replicate', 'Channel', 'Avg 1msec Baseline', 'StDev 1msec Baseline']
         point_keys = sorted(model.waveforms[0].points)
         for point_number, point_type in point_keys:
             point_type_code = 'P' if point_type == Point.PEAK else 'N'
