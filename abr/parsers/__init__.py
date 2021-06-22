@@ -61,7 +61,7 @@ def filter_string(waveform):
 
 
 def _add_replicate(x):
-    x['Replicate'] = range(len(x))
+    x['Replicate'] = range(len(x))[::-1]
     return x
 
 
