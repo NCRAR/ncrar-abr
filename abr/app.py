@@ -17,7 +17,7 @@ from enaml.qt.QtCore import QStandardPaths
 with enaml.imports():
     from enaml.stdlib.message_box import information
     from abr.launch_window import LaunchWindow, Settings
-    from abr.main_window import (CompareWindow, DNDWindow, load_files, SerialWindow)
+    from abr.main_window import (DNDWindow, load_files, SerialWindow)
     from abr.presenter import SerialWaveformPresenter, WaveformPresenter
 
 

@@ -11,7 +11,7 @@ from enaml.core.api import d_, Declarative
 from enaml.qt.qt_application import QtApplication
 
 with enaml.imports():
-    from abr.main_window import CompareWindow
+    from abr.compare_window import CompareWindow
 
 from abr.app import add_default_arguments, parse_args
 from abr.presenter import WaveformPresenter
@@ -121,7 +121,6 @@ class Compare(Declarative):
                     analyzed_b = hit.loc['analyzed_filename', self.rater_y]
                     key = (filename, frequency * 1e3, level, replicate, analyzed_a, analyzed_b)
                     selected.append(key)
-        print(selected)
         self.selected_points = selected
 
 
