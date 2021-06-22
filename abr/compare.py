@@ -116,7 +116,7 @@ class Compare(Declarative):
                     .xs(filename, level='filename') \
                     .xs(frequency, level='frequency') \
                     .iloc[info['ind']]
-                for (subject, level, replicate), hit in hits.iterrows():
+                for (subject, level, replicate, _), hit in hits.iterrows():
                     analyzed_a = hit.loc['analyzed_filename', self.rater_x]
                     analyzed_b = hit.loc['analyzed_filename', self.rater_y]
                     key = (filename, frequency * 1e3, level, replicate, analyzed_a, analyzed_b)
@@ -130,7 +130,7 @@ def main():
     parser.add_argument('directory')
     options = parse_args(parser, waves=False)
 
-    cols = ['filename', 'analyzed_filename', 'subject', 'frequency', 'Level', 'Replicate', 'analyzer']
+    cols = ['filename', 'analyzed_filename', 'subject', 'frequency', 'Level', 'Replicate', 'Channel', 'analyzer']
     app = QtApplication()
     _, waves = options['parser'].load_analyses(options['directory'])
     waves = waves.set_index(cols).sort_index()
