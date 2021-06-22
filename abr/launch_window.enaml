@@ -40,9 +40,12 @@ class Settings(Atom):
                 pass
 
     def get_default_args(self, waves=True):
-        args = ['--parser', self.parser, '--user', self.analyzer,
-                '--calibration', self.calibration_file, '--latency',
-                self.latency_file]
+        args = ['--parser', self.parser, '--user', self.analyzer]
+
+        if self.calibration_file:
+            args.extend(['--calibration', self.calibration_file])
+        if self.latency_file:
+            args.extend(['--latency', self.latency_file])
         if self.filter_data:
             args.extend(['--highpass', str(self.filter_lb)])
             args.extend(['--lowpass', str(self.filter_ub)])
@@ -76,6 +79,7 @@ class Settings(Atom):
     def launch_compare(self):
         args = ['abr-compare', self.study_folder]
         args.extend(self.get_default_args(waves=False))
+        print(' '.join(args))
         result = subprocess.check_output(args)
 
 
@@ -97,8 +101,8 @@ enamldef LaunchWindow(MainWindow): window:
             vbox(
                 hbox(a_label, a_field),
                 hbox(p_label, p_field),
-                hbox(calfile_label, calfile_field, calfile_button),
-                hbox(latency_label, latency_field, latency_button),
+                hbox(calfile_label, calfile_field, calfile_button, calfile_clear_button),
+                hbox(latency_label, latency_field, latency_button, latency_clear_button),
                 hbox(m_label, waves),
                 hbox(do_filter, filter_lb, l_filter_to, filter_ub, l_filter_end),
                 hbox(study_label, study_field, study_button),
@@ -112,9 +116,8 @@ enamldef LaunchWindow(MainWindow): window:
             align('v_center', latency_label, latency_field, latency_button),
             align('v_center', study_label, study_field, study_button),
             align('width', b_basic, b_loop, b_export, b_compare),
-            calfile_button.width == 30,
-            latency_button.width == 30,
-            study_button.width == 30,
+            align('width', study_button, latency_clear_button, latency_button, calfile_clear_button, calfile_button),
+            study_button.width == 60,
         ]
 
         Label: a_label:
@@ -179,7 +182,7 @@ enamldef LaunchWindow(MainWindow): window:
             text << settings.calibration_file
 
         PushButton: calfile_button:
-            text = '🗎'
+            text = 'Open'
             clicked ::
                 filters =['Spreadsheet (*.csv, *.xls, *.xlsx)']
                 result = FileDialogEx.get_open_file_name(
@@ -188,6 +191,11 @@ enamldef LaunchWindow(MainWindow): window:
                 if result:
                     settings.calibration_file = result
 
+        PushButton: calfile_clear_button:
+            text = 'Clear'
+            clicked ::
+                settings.calibration_file = ''
+
         Label: latency_label:
             text = 'Latencies file'
 
@@ -195,7 +203,7 @@ enamldef LaunchWindow(MainWindow): window:
             text << settings.latency_file
 
         PushButton: latency_button:
-            text = '🗎'
+            text = 'Open'
             clicked ::
                 filters =['Spreadsheet (*.csv, *.xls, *.xlsx)']
                 result = FileDialogEx.get_open_file_name(
@@ -204,6 +212,11 @@ enamldef LaunchWindow(MainWindow): window:
                 if result:
                     settings.latency_file = result
 
+        PushButton: latency_clear_button:
+            text = 'Clear'
+            clicked ::
+                settings.latency_file = ''
+
         Label: study_label:
             text = 'Study folder'
 
@@ -211,7 +224,7 @@ enamldef LaunchWindow(MainWindow): window:
             text << settings.study_folder
 
         PushButton: study_button:
-            text = '🗎'
+            text = 'Open'
             clicked ::
                 result = FileDialogEx.get_existing_directory(
                     parent=window, current_path=settings.study_folder)
@@ -220,9 +233,7 @@ enamldef LaunchWindow(MainWindow): window:
 
         PushButton: b_basic:
             text = 'Launch basic'
-            enabled << bool(settings.analyzer) and \
-                Path(settings.calibration_file).is_file() and \
-                Path(settings.latency_file).is_file()
+            enabled << bool(settings.analyzer)
             clicked ::
                 try:
                     settings.launch_basic()
@@ -232,10 +243,7 @@ enamldef LaunchWindow(MainWindow): window:
 
         PushButton: b_loop:
             text = 'Launch batch'
-            enabled << bool(settings.analyzer) and \
-                bool(settings.study_folder) and \
-                Path(settings.calibration_file).is_file() and \
-                Path(settings.latency_file).is_file()
+            enabled << bool(settings.analyzer) and bool(settings.study_folder)
             clicked ::
                 try:
                     settings.launch_batch()

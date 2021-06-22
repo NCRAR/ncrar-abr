@@ -234,13 +234,25 @@ def get_calibration_date(system, experiment_date, calibration):
     return most_recent_calibration, time_since_calibration
 
 
+DEFAULT_LATENCIES = {
+    1: stats.norm(3, 1),
+    2: stats.norm(4, 1),
+    3: stats.norm(5, 1),
+    4: stats.norm(6, 1),
+    5: stats.norm(7, 1),
+}
+
+
 def get_latencies(stim_freq, waves, latency_file):
-    all_latencies = pd.read_excel(latency_file, sheet_name='latencies', header=[0, 1], index_col=0)
-    all_latencies = all_latencies.rename(index={'click': 0, 'Click': 0})
-    all_latencies.index *= 1e3
-    latencies = all_latencies.loc[stim_freq].unstack()
-    latency_dict = latencies.apply(lambda x: stats.norm(x['mean'], x['std']), axis=1).to_dict()
-    return {w: latency_dict[w] for w in waves}
+    if latency_file is not None:
+        all_latencies = pd.read_excel(latency_file, sheet_name='latencies', header=[0, 1], index_col=0)
+        all_latencies = all_latencies.rename(index={'click': 0, 'Click': 0})
+        all_latencies.index *= 1e3
+        latencies = all_latencies.loc[stim_freq].unstack()
+        latency_dict = latencies.apply(lambda x: stats.norm(x['mean'], x['std']), axis=1).to_dict()
+        return {w: latency_dict[w] for w in waves}
+    else:
+        return {w: DEFAULT_LATENCIES[w] for w in waves}
 
 
 ################################################################################
