@@ -269,14 +269,8 @@ def load(filename, filter, frequencies, calibration_file, latency_file, waves,
 
     if calibration_file is not None:
         calibration = load_calibration(calibration_file)
-        cal_date, time_since_cal = \
-            get_calibration_date( ihs_system, experiment_date, calibration)
-        cal_date = cal_date.strftime('%Y%m%d'),
-        time_since_cal = int(time_since_cal.days)
     else:
         calibration = None
-        cal_date = 'NaT'
-        time_since_cal = np.inf
 
     info = load_metadata(filename, calibration)
 
@@ -286,6 +280,15 @@ def load(filename, filter, frequencies, calibration_file, latency_file, waves,
 
     ihs_system = info.iloc[0]['system']
     experiment_date = info.iloc[0]['date']
+
+    if calibration is not None:
+        cal_date, time_since_cal = \
+            get_calibration_date( ihs_system, experiment_date, calibration)
+        cal_date = cal_date.strftime('%Y%m%d'),
+        time_since_cal = int(time_since_cal.days)
+    else:
+        cal_date = 'NaT'
+        time_since_cal = np.inf
 
     meta = {
         'channel': 1,
