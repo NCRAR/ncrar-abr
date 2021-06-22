@@ -72,7 +72,7 @@ def plot_model(axes, model):
         plots.append(plot)
 
         text_trans = T.blended_transform_factory(axes.transAxes, y_trans)
-        axes.text(-0.05, 0, f'{waveform.level}', transform=text_trans)
+        axes.text(-0.07, 0, f'{waveform.level:.0f}', transform=text_trans)
 
     axes.set_yticks([])
     axes.grid()
