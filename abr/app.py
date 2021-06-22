@@ -180,7 +180,7 @@ def aggregate(study_directory, output_file):
     thresholds = []
     waves = []
     for a in analyzed:
-        f, th, w = parsers.load_analysis(a)
+        f, _, w = parsers.load_analysis(a)
 
         parts = a.stem.split('-')
         if parts[-2].endswith('kHz'):
@@ -191,11 +191,9 @@ def aggregate(study_directory, output_file):
             subject = '-'.join(parts[:-3])
 
         keys.append((subject, analyzer, f))
-        thresholds.append(th)
         waves.append(w)
 
     index = pd.MultiIndex.from_tuples(keys, names=['subject', 'analyzer', 'frequency'])
-    thresholds = pd.Series(thresholds, index=index, name='thresholds').reset_index()
     waves = pd.concat(waves, keys=keys, names=['subject', 'analyzer', 'frequency']).reset_index()
     for i in range(1, 7):
         try:
@@ -216,7 +214,6 @@ def aggregate(study_directory, output_file):
     }).groupby('stimulus').agg(['mean', 'std'])
 
     with pd.ExcelWriter(output_file) as writer:
-        thresholds.to_excel(writer, sheet_name='thresholds', index=False)
         waves.to_excel(writer, sheet_name='waves', index=False)
         latency_summary.to_excel(writer, sheet_name='latencies')
 
