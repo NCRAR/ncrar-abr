@@ -105,7 +105,7 @@ def load_metadata(filename, calibration=None):
     info['waveform_sf'] = 6.74e2
 
     # The rows where level is 110 dB SPL have a different scaling factor.
-    info.loc[info.level >= 107, 'waveform_sf'] = 3.37e2
+    info.loc[info.level >= 105, 'waveform_sf'] = 3.37e2
 
     # Start time of stimulus in usec (since sampling period is reported in usec,
     # we should try to be consistent with all time units).
