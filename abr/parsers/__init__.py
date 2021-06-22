@@ -29,6 +29,7 @@ import time
 import pandas as pd
 import numpy as np
 
+import abr
 from ..datatype import Point
 
 P_ANALYZER = re.compile('.*kHz(?:-(\w+))?-analyzed.txt')
@@ -215,7 +216,8 @@ class Parser(object):
                                  frequency=model.freq*1e-3,
                                  columns=columns,
                                  spreadsheet=spreadsheet,
-                                 metadata=meta)
+                                 metadata=meta,
+                                 version=abr.__version__)
 
         filename = self.get_save_filename(model.filename, model.freq)
         with open(filename, 'w') as fh:
@@ -275,7 +277,8 @@ class Parser(object):
 CONTENT = '''
 # Threshold (dB SPL): {threshold:.2f}
 # Frequency (kHz): {frequency:.2f}
-# Version: 0.0.1
+# file_format_version: 0.0.1
+# code_version: {version}
 {metadata}
 # NOTE: Negative latencies indicate no peak. NaN for amplitudes indicate peak was unscorable.
 {columns}
