@@ -119,6 +119,8 @@ def load_metadata(filename, calibration=None):
         if calibration is not None:
             info['actual_level'] = \
                 info.apply(get_actual_level, calibration=calibration, axis=1)
+        else:
+            info['actual_level'] = info['level']
     except Exception as e:
         raise IOError(f'Cannot load file {filename}\n{e}') from e
 
@@ -253,7 +255,17 @@ def load(filename, filter, frequencies, calibration_file, latency_file, waves,
     if not is_ihs_file(filename):
         raise IOError('Unsupported file format')
 
-    calibration = load_calibration(calibration_file)
+    if calibration_file is not None:
+        calibration = load_calibration(calibration_file)
+        cal_date, time_since_cal = \
+            get_calibration_date( ihs_system, experiment_date, calibration)
+        cal_date = cal_date.strftime('%Y%m%d'),
+        time_since_cal = int(time_since_cal.days)
+    else:
+        calibration = None
+        cal_date = 'NaT'
+        time_since_cal = np.inf
+
     info = load_metadata(filename, calibration)
 
     info = info.query('channel == 1')
@@ -263,17 +275,14 @@ def load(filename, filter, frequencies, calibration_file, latency_file, waves,
     ihs_system = info.iloc[0]['system']
     experiment_date = info.iloc[0]['date']
 
-    cal_date, time_since_cal = get_calibration_date(
-        ihs_system, experiment_date, calibration)
-
     meta = {
         'channel': 1,
         'fs': fs,
         'filter': str(filter),
         'ihs_system': ihs_system,
         'experiment_date': experiment_date.strftime('%Y%m%d'),
-        'calibration_date': cal_date.strftime('%Y%m%d'),
-        'days_since_calibration': int(time_since_cal.days),
+        'calibration_date': cal_date,
+        'days_since_calibration': time_since_cal,
     }
 
     series = []
