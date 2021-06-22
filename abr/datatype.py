@@ -210,7 +210,11 @@ class ABRSeries(object):
         for w in self.waveforms:
             g = {p.wave_number: p.x for p in w.points.values() if p.is_peak()}
             g = pd.DataFrame({'x': g})
-            n_latencies[w] = generate_latencies_bound(g)
+            n_priors = generate_latencies_bound(g)
+            if 5 in n_priors:
+                n_priors_skew = generate_latencies_skewnorm(g)
+                n_priors[5] = n_priors_skew[5]
+            n_latencies[w] = n_priors
         level_guesses = guess(self.waveforms, n_latencies, invert=True)
         self.set_points(level_guesses, Point.VALLEY)
 
