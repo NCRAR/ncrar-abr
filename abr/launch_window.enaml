@@ -4,7 +4,7 @@ import subprocess
 from atom.api import Atom, Bool, Enum, Int, List, Str, Typed
 
 from enaml.core.api import Looper
-from enaml.layout.api import align, hbox, spacer, vbox
+from enaml.layout.api import align, grid, hbox, spacer, vbox
 from enaml.stdlib.fields import IntField
 from enaml.stdlib.message_box import warning, information
 from enaml.validator import Validator
@@ -76,8 +76,8 @@ class Settings(Atom):
         args = ['abr-aggregate', self.study_folder, output_file]
         result = subprocess.check_output(args)
 
-    def launch_compare(self):
-        args = ['abr-compare', self.study_folder]
+    def launch_compare(self, layout):
+        args = ['abr-compare', self.study_folder, '--layout', layout]
         args.extend(self.get_default_args(waves=False))
         print(' '.join(args))
         result = subprocess.check_output(args)
@@ -106,7 +106,8 @@ enamldef LaunchWindow(MainWindow): window:
                 hbox(m_label, waves),
                 hbox(do_filter, filter_lb, l_filter_to, filter_ub, l_filter_end),
                 hbox(study_label, study_field, study_button),
-                hbox(b_basic, b_loop, b_export, b_compare),
+                grid((b_basic, b_loop, b_export, b_compare_long),
+                     (None,    None,   None,     b_compare_grid)),
             ),
             align('width', a_label, m_label, p_label, calfile_label, latency_label, do_filter),
             align('left', a_field, p_field, calfile_field, latency_field, waves, filter_lb),
@@ -115,7 +116,7 @@ enamldef LaunchWindow(MainWindow): window:
             align('v_center', calfile_label, calfile_field, calfile_button),
             align('v_center', latency_label, latency_field, latency_button),
             align('v_center', study_label, study_field, study_button),
-            align('width', b_basic, b_loop, b_export, b_compare),
+            align('width', b_basic, b_loop, b_export, b_compare_long, b_compare_grid),
             align('width', study_button, latency_clear_button, latency_button, calfile_clear_button, calfile_button),
             study_button.width == 60,
         ]
@@ -266,12 +267,22 @@ enamldef LaunchWindow(MainWindow): window:
                         mesg = 'Unable to start program.\n{}'.format(e)
                         warning(window, 'Error', mesg)
 
-        PushButton: b_compare:
-            text = 'Compare raters'
+        PushButton: b_compare_long:
+            text = 'Compare raters (long format)'
             enabled << bool(settings.study_folder)
             clicked ::
                 try:
-                    settings.launch_compare()
+                    settings.launch_compare(layout='long')
+                except Exception as e:
+                    mesg = 'Unable to start program.\n{}'.format(e)
+                    warning(window, 'Error', mesg)
+
+        PushButton: b_compare_grid:
+            text = 'Compare raters (grid format)'
+            enabled << bool(settings.study_folder)
+            clicked ::
+                try:
+                    settings.launch_compare(layout='grid')
                 except Exception as e:
                     mesg = 'Unable to start program.\n{}'.format(e)
                     warning(window, 'Error', mesg)

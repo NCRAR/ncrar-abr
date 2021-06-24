@@ -128,6 +128,7 @@ def main():
     parser = argparse.ArgumentParser("abr_compare")
     add_default_arguments(parser, waves=False)
     parser.add_argument('directory')
+    parser.add_argument('--layout', choices=('long', 'grid'), default='grid')
     options = parse_args(parser, waves=False)
 
     cols = ['filename', 'analyzed_filename', 'subject', 'frequency', 'Level', 'Replicate', 'Channel', 'analyzer']
@@ -143,7 +144,8 @@ def main():
                          compare=compare,
                          presenter_a=presenter_a,
                          presenter_b=presenter_b,
-                         presenter_c=presenter_c
+                         presenter_c=presenter_c,
+                         layout=options['layout'],
                          )
     view.show()
     app.start()

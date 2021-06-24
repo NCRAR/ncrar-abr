@@ -1,5 +1,5 @@
 from enaml.application import deferred_call
-from enaml.layout.api import align, hbox, vbox
+from enaml.layout.api import align, grid, hbox, vbox
 from enaml.styling import StyleSheet, Style, Setter
 from enaml.widgets.api import Container, Label, MainWindow, ObjectCombo
 
@@ -20,13 +20,14 @@ enamldef CompareStyle(StyleSheet):
             value = '14pt Verdana bold'
 
 
-enamldef CompareWindow(MainWindow):
+enamldef CompareWindow(MainWindow): window:
 
     CompareStyle:
         pass
 
     attr compare
     attr parser
+    attr layout
 
     alias presenter_a: rater_a_plot.presenter
     alias presenter_b: rater_b_plot.presenter
@@ -89,25 +90,36 @@ enamldef CompareWindow(MainWindow):
         layout_constraints => ():
             first_line = [show_label, feature, for_label, x_select, and1_label, y_select]
             second_line = [plotas_label, plot_mode, and2_label, jitter_mode]
-            return [
-                hbox(
+            third_line = [selected_label, plot_title]
+            canvas_box = vbox(
+                hbox(*first_line),
+                hbox(*second_line),
+                hbox(*third_line),
+                canvas
+            )
+
+            if window.layout == 'long':
+                layout = hbox(
+                    canvas_box,
                     vbox(
-                        hbox(*first_line),
-                        hbox(*second_line),
-                        canvas,
-                    ),
-                    vbox(
-                        plot_title,
                         hbox(
                             vbox(rater_a_label, rater_a_plot),
                             vbox(rater_b_label, rater_b_plot),
                             vbox(rater_c_label, rater_c_plot),
                         ),
                     ),
-                ),
+                )
+            else:
+                layout = grid([canvas_box,                          vbox(rater_c_label, rater_c_plot)],
+                              [vbox(rater_a_label, rater_a_plot),   vbox(rater_b_label, rater_b_plot)])
+
+            return [
+                layout,
                 align('v_center', *first_line),
                 align('v_center', *second_line),
+                align('v_center', *third_line),
                 align('width', rater_a_plot, rater_b_plot, rater_c_plot),
+                align('height', rater_a_plot, rater_b_plot, rater_c_plot),
                 x_select.width == y_select.width,
             ]
 
@@ -148,6 +160,9 @@ enamldef CompareWindow(MainWindow):
             selected ::
                 compare.jitter = selected == 'jitter data'
 
+        Label: selected_label:
+            text = 'Selected point'
+
         ABRCanvas: canvas:
             figure << compare.figure
             initialized ::
@@ -177,4 +192,3 @@ enamldef CompareWindow(MainWindow):
 
         Label: plot_title:
             text = 'Please select a point to load'
-            style_class = 'emphasis'
