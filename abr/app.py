@@ -25,9 +25,12 @@ from abr import parsers
 from abr.parsers import Parser
 
 
-def config_file():
+def config_path():
     config_path = Path(QStandardPaths.standardLocations(QStandardPaths.GenericConfigLocation)[0])
-    config_file =  config_path / 'NCRAR' / 'abr' / 'config.json'
+    return config_path / 'NCRAR' / 'abr'
+
+def config_file():
+    config_file =  config_path() / 'config.json'
     config_file.parent.mkdir(exist_ok=True, parents=True)
     return config_file
 

@@ -76,8 +76,8 @@ class Settings(Atom):
         args = ['abr-aggregate', self.study_folder, output_file]
         result = subprocess.check_output(args)
 
-    def launch_compare(self, layout):
-        args = ['abr-compare', self.study_folder, '--layout', layout]
+    def launch_compare(self):
+        args = ['abr-compare', self.study_folder]
         args.extend(self.get_default_args(waves=False))
         print(' '.join(args))
         result = subprocess.check_output(args)
@@ -106,8 +106,7 @@ enamldef LaunchWindow(MainWindow): window:
                 hbox(m_label, waves),
                 hbox(do_filter, filter_lb, l_filter_to, filter_ub, l_filter_end),
                 hbox(study_label, study_field, study_button),
-                grid((b_basic, b_loop, b_export, b_compare_long),
-                     (None,    None,   None,     b_compare_grid)),
+                hbox(b_basic, b_loop, b_export, b_compare),
             ),
             align('width', a_label, m_label, p_label, calfile_label, latency_label, do_filter),
             align('left', a_field, p_field, calfile_field, latency_field, waves, filter_lb),
@@ -116,7 +115,7 @@ enamldef LaunchWindow(MainWindow): window:
             align('v_center', calfile_label, calfile_field, calfile_button),
             align('v_center', latency_label, latency_field, latency_button),
             align('v_center', study_label, study_field, study_button),
-            align('width', b_basic, b_loop, b_export, b_compare_long, b_compare_grid),
+            align('width', b_basic, b_loop, b_export, b_compare),
             align('width', study_button, latency_clear_button, latency_button, calfile_clear_button, calfile_button),
             study_button.width == 60,
         ]
@@ -267,22 +266,12 @@ enamldef LaunchWindow(MainWindow): window:
                         mesg = 'Unable to start program.\n{}'.format(e)
                         warning(window, 'Error', mesg)
 
-        PushButton: b_compare_long:
-            text = 'Compare raters (long format)'
+        PushButton: b_compare:
+            text = 'Compare raters'
             enabled << bool(settings.study_folder)
             clicked ::
                 try:
-                    settings.launch_compare(layout='long')
-                except Exception as e:
-                    mesg = 'Unable to start program.\n{}'.format(e)
-                    warning(window, 'Error', mesg)
-
-        PushButton: b_compare_grid:
-            text = 'Compare raters (grid format)'
-            enabled << bool(settings.study_folder)
-            clicked ::
-                try:
-                    settings.launch_compare(layout='grid')
+                    settings.launch_compare()
                 except Exception as e:
                     mesg = 'Unable to start program.\n{}'.format(e)
                     warning(window, 'Error', mesg)
