@@ -182,6 +182,7 @@ enamldef CompareWindow(MainWindow): window:
                                         compare.button_press_event)
 
             DockItem:
+                closable = False
                 name = 'rater_a'
                 title << 'Rater {} (view-only)'.format(compare.rater_x)
 
@@ -189,6 +190,7 @@ enamldef CompareWindow(MainWindow): window:
                     interactive = False
 
             DockItem:
+                closable = False
                 name = 'rater_b'
                 title << 'Rater {} (view-only)'.format(compare.rater_y)
 
@@ -196,6 +198,7 @@ enamldef CompareWindow(MainWindow): window:
                     interactive = False
 
             DockItem:
+                closable = False
                 name = 'rater_c'
                 title = 'Rater {} (editable)'.format(parser._user)
 
