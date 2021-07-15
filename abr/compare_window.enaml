@@ -1,9 +1,9 @@
 import pickle
 
 from enaml.application import deferred_call
-from enaml.layout.api import align, grid, hbox, vbox
+from enaml.layout.api import (align, AreaLayout, DockBarLayout, grid, hbox,
+                              HSplitLayout, vbox)
 
-from enaml.layout.api import AreaLayout, DockBarLayout, HSplitLayout
 from enaml.stdlib.message_box import question
 from enaml.widgets.api import Action, Container, DockArea, DockItem, Label, MainWindow, Menu, MenuBar, ObjectCombo
 
@@ -12,6 +12,19 @@ from abr.app import config_path
 from abr.main_window import ABRCanvas, fmt_freq, mpl_connect, MPLContainer
 
 
+def default_layout():
+    return AreaLayout(
+        HSplitLayout('rater_a', 'rater_b', sizes=[1, 1]),
+        dock_bars=[
+            DockBarLayout('compare_raters', position='left'),
+            DockBarLayout('rater_c', position='right')
+        ]
+    )
+
+
+def default_size():
+    return (1000, 800)
+
 def load_layout(window, dock_area):
     layout_file = config_path() / 'compare.layout'
     if layout_file.exists():
@@ -19,6 +32,9 @@ def load_layout(window, dock_area):
             dock_area.layout = pickle.load(fh)
             geometry = pickle.load(fh)
             deferred_call(window.set_geometry, geometry)
+    else:
+        window.set_size(default_size())
+        dock_area.layout = default_layout()
 
 
 enamldef CompareWindow(MainWindow): window:
@@ -31,11 +47,8 @@ enamldef CompareWindow(MainWindow): window:
     alias presenter_b: rater_b_plot.presenter
     alias presenter_c: rater_c_plot.presenter
 
-    initial_size = (600, 900)
     title << 'ABR compare :: {}'.format(plot_title)
-    icon = main_icon
-
-    initial_size = (1000, 800)
+    initial_size = default_size()
     icon = main_icon
 
     initialized ::
@@ -51,7 +64,6 @@ enamldef CompareWindow(MainWindow): window:
                     layout_file = config_path() / 'compare.layout'
                     layout = dock_area.save_layout()
                     geometry = window.geometry()
-                    print(geometry)
                     with layout_file.open('wb') as fh:
                         pickle.dump(layout, fh)
                         pickle.dump(geometry, fh)
@@ -108,13 +120,7 @@ enamldef CompareWindow(MainWindow): window:
         padding = 0
 
         DockArea: dock_area:
-            layout = AreaLayout(
-                HSplitLayout('rater_a', 'rater_b', sizes=[1, 1]),
-                dock_bars=[
-                    DockBarLayout('compare_raters', position='left'),
-                    DockBarLayout('rater_c', position='right')
-                ]
-            )
+            layout = default_layout()
 
             DockItem:
                 closable = False
