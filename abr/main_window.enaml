@@ -150,29 +150,11 @@ enamldef MPLContainer(Container): di:
         Menu:
             Looper: looper:
                 iterable << analyzed_filenames[:]
-                Menu:
-                    title << get_rater(loop_item)
-                    Action:
-                        text = 'Plot'
-                        triggered ::
-                            presenter.load_analysis(loop_item)
-                            canvas.set_focus()
-
-                    Action:
-                        text = 'Delete'
-                        triggered ::
-                            mesg = 'Are you sure you want to remove this file?'
-                            buttons = [
-                                DialogButton('Yes', 'accept'),
-                                DialogButton('No', 'reject'),
-                            ]
-                            result = warning(None, 'Delete', mesg, buttons)
-                            if result.text == 'Yes':
-                                loop_item.unlink()
-                                items = di.analyzed_filenames[:]
-                                items.remove(loop_item)
-                                di.analyzed_filenames = items
-                            canvas.set_focus()
+                Action:
+                    text << get_rater(loop_item)
+                    triggered ::
+                        presenter.load_analysis(loop_item)
+                        canvas.set_focus()
 
     ToolButton: clear:
         enabled << interactive
