@@ -248,7 +248,10 @@ def get_latencies(stim_freq, waves, latency_file):
         all_latencies = pd.read_excel(latency_file, sheet_name='latencies', header=[0, 1], index_col=0)
         all_latencies = all_latencies.rename(index={'click': 0, 'Click': 0})
         all_latencies.index *= 1e3
-        latencies = all_latencies.loc[stim_freq].unstack()
+        try:
+            latencies = all_latencies.loc[stim_freq].unstack()
+        except KeyError:
+            raise IOError(f'{stim_freq*1e-3:.1f} kHz missing from latency file.')
         latency_dict = latencies.apply(lambda x: stats.norm(x['mean'], x['std']), axis=1).to_dict()
         return {w: latency_dict[w] for w in waves}
     else:
