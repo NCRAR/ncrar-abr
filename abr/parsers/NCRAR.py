@@ -1,3 +1,6 @@
+import logging
+log = logging.getLogger(__name__)
+
 import datetime as dt
 import numpy as np
 import pandas as pd
@@ -37,10 +40,17 @@ def parse_identifier(identifier):
         month_map[code] = i + 10
     for i, code in enumerate('ABCDEFGHIJKLMNOPQRSTUV'):
         day_map[code] = i + 10
-    system, date_code = identifier.split('-')
-    year = int(date_code[:4])
-    month = month_map[date_code[4]]
-    day = day_map[date_code[5]]
+    try:
+        system, date_code = identifier.split('-')
+        year = int(date_code[:4])
+        month = month_map[date_code[4]]
+        day = day_map[date_code[5]]
+    except ValueError:
+        system, date_code = identifier.split('_')
+        year = 2000 + int(date_code[4:])
+        month = int(date_code[:2])
+        day = int(date_code[2:4])
+
     return pd.Series({'system': system[3:], 'date': dt.date(year, month, day)})
 
 
@@ -149,7 +159,13 @@ def load_waveforms(filename, info):
 
     '''
     # Read the waveform table into a dataframe
-    df = pd.io.parsers.read_csv(filename, skiprows=20)
+    with filename.open('r') as fh:
+        i = 0
+        while True:
+            if fh.readline().startswith('Data Pnt:'):
+                break
+            i += 1
+    df = pd.io.parsers.read_csv(filename, skiprows=i)
 
     # Keep only the columns containing the signal of interest.  There are six
     # columns for each trial.  We only want the column containing the raw
