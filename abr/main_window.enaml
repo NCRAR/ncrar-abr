@@ -119,6 +119,7 @@ class Interactor:
             elif event.key == 'shift+alt+down':
                 self.presenter.bottom -= 0.01
         except Exception as e:
+            log.exception(e)
             critical(None, 'Error', str(e))
 
 
@@ -284,6 +285,7 @@ def load_files(parser, filenames, dock_area):
                 except Exception as e:
                     messages.append(f'{filename} {fmt_freq(model.freq)}: {e}')
         except Exception as e:
+            log.exception(e)
             messages.append(f'{filename}: {e}')
 
     if messages:

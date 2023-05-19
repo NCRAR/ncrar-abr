@@ -1,3 +1,6 @@
+import logging
+log = logging.getLogger(__name__)
+
 import datetime as dt
 import numpy as np
 import pandas as pd
@@ -37,10 +40,17 @@ def parse_identifier(identifier):
         month_map[code] = i + 10
     for i, code in enumerate('ABCDEFGHIJKLMNOPQRSTUV'):
         day_map[code] = i + 10
-    system, date_code = identifier.split('-')
-    year = int(date_code[:4])
-    month = month_map[date_code[4]]
-    day = day_map[date_code[5]]
+    try:
+        system, date_code = identifier.split('-')
+        year = int(date_code[:4])
+        month = month_map[date_code[4]]
+        day = day_map[date_code[5]]
+    except ValueError:
+        system, date_code = identifier.split('_')
+        year = 2000 + int(date_code[4:])
+        month = int(date_code[:2])
+        day = int(date_code[2:4])
+
     return pd.Series({'system': system[3:], 'date': dt.date(year, month, day)})
 
 
@@ -84,8 +94,8 @@ def load_metadata(filename, calibration=None):
     '''
     info = {}
     with open(filename, 'r') as fh:
-        for i, line in enumerate(fh):
-            if i == 20:
+        for line in fh:
+            if line.startswith('Data Pnt:'):
                 break
             name = line.split(',', 1)[0].strip(':').lower()
             info[name] = _parse_line(line)
@@ -109,7 +119,7 @@ def load_metadata(filename, calibration=None):
 
     # Start time of stimulus in usec (since sampling period is reported in usec,
     # we should try to be consistent with all time units).
-    info['stimulus_start'] = 12.8e3
+    info['stimulus_start'] = info['zero position']  * info['smp. period']
 
     # Interpret identifier string
     info = info.join(info['identifier'].transform(parse_identifier))
@@ -127,7 +137,7 @@ def load_metadata(filename, calibration=None):
     return info
 
 
-def load_waveforms(filename, info):
+def load_waveforms(filename, info=None):
     '''
     Load the waveforms stored in the ABR file
 
@@ -139,8 +149,8 @@ def load_waveforms(filename, info):
     -----------
     filename : string
         Filename to load
-    info : pandas.DataFrame
-        Waveform metadata (see `load_metadata`)
+    info : {None, pandas.DataFrame}
+        Waveform metadata (see `load_metadata`). If None, automatically loaded using `load_metadata`. By providing `info`, you have the opportunity to modify the returned waveforms.
 
     Returns
     -------
@@ -148,8 +158,16 @@ def load_waveforms(filename, info):
         Dataframe containing waveforms
 
     '''
+    filename = Path(filename)
+    if info is None:
+        info = load_metadata(filename)
+
     # Read the waveform table into a dataframe
-    df = pd.io.parsers.read_csv(filename, skiprows=20)
+    with filename.open('r') as fh:
+        for i, line in enumerate(fh):
+            if line.startswith('Data Pnt:'):
+                break
+    df = pd.io.parsers.read_csv(filename, skiprows=i)
 
     # Keep only the columns containing the signal of interest.  There are six
     # columns for each trial.  We only want the column containing the raw
@@ -276,7 +294,6 @@ def load(filename, filter, frequencies, calibration_file, latency_file, waves,
         calibration = None
 
     info = load_metadata(filename, calibration)
-
     info = info.query('channel == 1')
     fs = 1/(info.iloc[0]['smp. period']*1e-6)
     data = load_waveforms(filename, info)
