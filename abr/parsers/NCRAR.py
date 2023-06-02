@@ -76,7 +76,19 @@ def _parse_line(line):
         return [t for t in tokens if t]
 
 
-def load_metadata(filename, calibration=None):
+# See M830100 - SmartEP Recording File Data Structure - Rev E for data
+# conversion information. Specifically:
+# uV = (Data * ADVolts * 1e6) / (Sweeps * ADrange * Gain)
+# ADvolts depends on system (see below). ADrange is 32767. Gain and sweeps are
+# stored in  file.
+SYSTEM_ADVOLTS = {
+    'USB': 10,
+    'USBjr': 10,
+    'USBlite': 5,
+}
+
+
+def load_metadata(filename, calibration=None, system='USB'):
     '''
     Load the metadata stored in the ABR file
 
@@ -107,15 +119,11 @@ def load_metadata(filename, calibration=None):
     info.set_index('waveform', inplace=True)
 
     info['level'] = info['intensity']
+    info['amp. gain'] *= 1e3
 
-    # Store the scaling factor for the waveform so we can recover this when
-    # loading.  By default the scaling factor is 674. For 110 dB SPL, the
-    # scaling factor is 337.  The statistician uses 6.74 and 3.37, but he
-    # includes a division of 100 elsewhere in his code to correct.
-    info['waveform_sf'] = 6.74e2
-
-    # The rows where level is 110 dB SPL have a different scaling factor.
-    info.loc[info.level >= 105, 'waveform_sf'] = 3.37e2
+    ad_volts = SYSTEM_ADVOLTS[system]
+    ad_range = 32767
+    info['waveform_sf'] = (ad_volts * 1e6) / (info['sweeps'] * ad_range * info['amp. gain'])
 
     # Start time of stimulus in usec (since sampling period is reported in usec,
     # we should try to be consistent with all time units).
@@ -150,7 +158,9 @@ def load_waveforms(filename, info=None):
     filename : string
         Filename to load
     info : {None, pandas.DataFrame}
-        Waveform metadata (see `load_metadata`). If None, automatically loaded using `load_metadata`. By providing `info`, you have the opportunity to modify the returned waveforms.
+        Waveform metadata (see `load_metadata`). If None, automatically loaded
+        using `load_metadata`. By providing `info`, you have the opportunity to
+        modify the returned waveforms.
 
     Returns
     -------
@@ -191,8 +201,8 @@ def load_waveforms(filename, info=None):
         t = (t-w_info['stimulus_start'])*1e-3
         time = pd.Index(t, name='time')
 
-        # Divide by the scaling factor and convert from nV to uV
-        s = df[w_index]/w_info['waveform_sf']*1e-3
+        # Conversion factor to get waveform in uV
+        s = df[w_index] * w_info['waveform_sf']
         s.index = time
         signals.append(s)
 

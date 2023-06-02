@@ -137,3 +137,21 @@ The following keys can be used when analyzing a waveform:
 	<dt>**Delete**</dt>
     <dd>Toggle peak as unscorable.</dd>
 </dl>
+
+## Changes
+
+### 2023.06.02
+
+After receiveing feedback from IHS, many values that were hard-coded into the file reader for the IHS text export have been corrected. The original code made the following assumptions:
+
+* For stimulus levels 105 dB peSPL or greater, the waveform scaling factor was hard-coded as 1/3.37e2.
+* For stimulus levels less than 105 dB peSPL, the waveform scaling factor was hard-coded as 1/6.74e2.
+
+However, the correct formula for scaling factor is based on the number of sweeps and gain as recorded in the file. If you analyzed data using older versions of this software and the following assumptions hold:
+
+* For stimulus levels 105 dB peSPL or greater, gain was set to 100 (see "amp. gain" in file header of IHS text export to find this value) and sweeps was set to 1024.
+* For stimulus levels less than 105 dB peSPL, gain was set to 100 (see "amp. gain" in file header of IHS text export to find this value) and sweeps was set to 2048.
+
+Then, you can multiply the peak amplitudes by 1.004368915372173 so that data analyzed using older versions of this software can be compared with data analyzed with versions 2023.06.02 or later. There are some important exceptions to note. For example, the IHS system in the lime booth was calibrated for a 105 dB peSPL stimulus; however, this is entered as 104 dB peSPL in IHS. Even though this is a 105 dB peSPL stimulus, the incorrect scaling factor was applied. Thus, in addition to multiplying the data by 1.004368915372173, you need to mulitply again by two.
+
+Further, it appears that different IHS systems may export a different "zero point". All waveforms saved to the file include ~12.5 msec of pre-stimulus baseline; however, this varies from system to system. We originally assumed that it was 12.8 msec of pre-stimulus baseline. However, this varies from system to system. Thus, data acquired on the lime system using versions pre-dating this one will have lateinces that are 0.9 msec longer than expected.
