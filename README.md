@@ -8,11 +8,25 @@ The program works with the text file exported by the IHS system at the NCRAR.
 
 ### Getting started
 
-The simplest way to get started is to download the [Anaconda Python Distribution](https://www.anaconda.com/distribution/). Once installed, you will have new programs available in your start menu. Open `Anaconda Prompt` and type `conda install -c NCRAR ncrar-abr`. On Windows, this will download the software and add a new shortcut to your start menu (inside the NCRAR folder) called `ABR`.
+The simplest way to get started is to download the [Anaconda Python Distribution](https://www.anaconda.com/distribution/). Once installed, you will have new programs available in your start menu. Open `Anaconda Prompt` and type the following sequence of commands to install the program:
+
+	conda create -n ncrar-abr
+	conda activate ncrar-abr
+	pip install ncrar-abr
+
+Note that previous versions of the software added a shortcut to the start menu. Newer versions no longer do (the mechanism through which the shortcuts were created are very fragile and we have moved away from it). To run the program, you need to open the `Anaconda Prompt` and type:
+
+	conda run -n ncrar-abr abr
 
 ### Running pilot versions
 
-If you wish to test a newer version of the ABR program without losing your current copy (e.g., to test a new feature), you can install the new version alongside your main one. The best way to do this is to open the `Anaconda Prompt` and type `conda create -n ncrar-abr-test -c NCRAR ncrar-abr`. When installing the software this way, the start menu shortcut will have the name you specified with the `-n` flag (i.e., `ABR (ncrar-abr-test)`).
+If you wish to test a newer version of the ABR program without losing your current copy (e.g., to test a new feature), you can install the new version alongside your main one. The best way to do this is to open the `Anaconda Prompt` and type:
+
+	conda create -n ncrar-abr-test
+	conda activate ncrar-abr-test
+	pip install ncrar-abr
+
+
 
 ## Usage
 
@@ -140,7 +154,13 @@ The following keys can be used when analyzing a waveform:
 
 ## Changes
 
-### 2023.06.02
+### Version 1.0.0
+
+*Change in build system*
+
+We have dropped using `conda-build` to create Anaconda packages. These packages take over an hour to build and are very fragile. Instead, we have switched to using GitHub actions to build a package that is automatically uploaded to PyPI.
+
+*Loading data from IHS file*
 
 After receiveing feedback from IHS, many values that were hard-coded into the file reader for the IHS text export have been corrected. The original code made the following assumptions:
 
