@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from scipy import signal
 
-from abr.datatype import ABRWaveform, ABRSeries
+from ncrar_abr.datatype import ABRWaveform, ABRSeries
 
 
 def load(filename, filter=None, frequencies=None):

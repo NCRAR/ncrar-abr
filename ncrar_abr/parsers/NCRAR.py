@@ -7,7 +7,7 @@ import pandas as pd
 from pathlib import Path
 from scipy import signal, stats
 
-from abr.datatype import ABRWaveform, ABRSeries
+from ncrar_abr.datatype import ABRWaveform, ABRSeries
 
 
 ################################################################################

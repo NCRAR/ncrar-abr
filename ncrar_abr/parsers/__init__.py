@@ -29,7 +29,7 @@ import time
 import pandas as pd
 import numpy as np
 
-import abr
+import ncrar_abr
 from ..datatype import Point
 
 P_ANALYZER = re.compile('.*kHz(?:-(\w+))?-analyzed.txt')
@@ -84,7 +84,9 @@ def load_analysis(fname):
         keep = [c for c in data.columns if not c.startswith('Unnamed')]
         data = data[keep]
         if 'Replicate' not in data:
-            data = data.groupby('Level').apply(_add_replicate).set_index('Replicate', append=True)
+            data = data.groupby('Level', group_keys=False) \
+                    .apply(_add_replicate) \
+                    .set_index('Replicate', append=True)
         else:
             data = data.set_index('Replicate', append=True)
         if 'Channel' not in data:
@@ -166,7 +168,7 @@ class Parser(object):
         self._file_format = file_format
         self._filter_settings = filter_settings
         self._user = user
-        self._module_name = f'abr.parsers.{file_format}'
+        self._module_name = f'ncrar_abr.parsers.{file_format}'
         self._module = importlib.import_module(self._module_name)
         self._calibration = calibration
         self._latency = latency
@@ -226,7 +228,7 @@ class Parser(object):
                                  columns=columns,
                                  spreadsheet=spreadsheet,
                                  metadata=meta,
-                                 version=abr.__version__)
+                                 version=ncrar_abr.__version__)
 
         filename = self.get_save_filename(model.filename, model.freq)
         with open(filename, 'w') as fh:
@@ -279,6 +281,9 @@ class Parser(object):
 
         index = pd.MultiIndex.from_tuples(keys, names=['filename', 'analyzed_filename', 'subject', 'analyzer', 'frequency'])
         thresholds = pd.Series(thresholds, index=index, name='thresholds').reset_index()
+        for w in waves:
+            print(w)
+            print(w.index.names)
         waves = pd.concat(waves, keys=keys, names=['filename', 'analyzed_filename', 'subject', 'analyzer', 'frequency']).reset_index()
         return thresholds, waves
 

@@ -8,7 +8,6 @@ from numpy import random
 import pandas as pd
 from scipy import stats
 
-
 import enaml
 from enaml.application import deferred_call
 from enaml.qt.qt_application import QtApplication
@@ -16,13 +15,15 @@ from enaml.qt.QtCore import QStandardPaths
 
 with enaml.imports():
     from enaml.stdlib.message_box import information
-    from abr.launch_window import LaunchWindow, Settings
-    from abr.main_window import (DNDWindow, load_files, SerialWindow)
-    from abr.presenter import SerialWaveformPresenter, WaveformPresenter
+    from ncrar_abr.compare import Compare
+    from ncrar_abr.compare_window import CompareWindow
+    from ncrar_abr.launch_window import LaunchWindow, Settings
+    from ncrar_abr.main_window import (DNDWindow, load_files, SerialWindow)
+    from ncrar_abr.presenter import SerialWaveformPresenter, WaveformPresenter
 
 
-from abr import parsers
-from abr.parsers import Parser
+from ncrar_abr import parsers
+from ncrar_abr.parsers import Parser
 
 
 def config_path():
@@ -103,7 +104,7 @@ def parse_args(parser, waves=True):
 
 
 def main_launcher():
-    parser = argparse.ArgumentParser('abr')
+    parser = argparse.ArgumentParser('ncrar-abr')
     args = parser.parse_args()
 
     app = QtApplication()
@@ -117,7 +118,7 @@ def main_launcher():
 
 
 def main_gui():
-    parser = argparse.ArgumentParser('abr-gui')
+    parser = argparse.ArgumentParser('ncrar-abr-gui')
     add_default_arguments(parser)
     parser.add_argument('--demo', action='store_true', dest='demo',
                         default=False, help='Load demo data')
@@ -137,7 +138,7 @@ def main_gui():
 
 
 def main_batch():
-    parser = argparse.ArgumentParser("abr_batch")
+    parser = argparse.ArgumentParser("ncrar-abr-batch")
     add_default_arguments(parser)
     parser.add_argument('dirnames', nargs='*')
     parser.add_argument('--list', action='store_true')
@@ -222,8 +223,57 @@ def aggregate(study_directory, output_file):
 
 
 def main_aggregate():
-    parser = argparse.ArgumentParser('abr-aggregate')
+    parser = argparse.ArgumentParser('ncrar-abr-aggregate')
     parser.add_argument('study_directory')
     parser.add_argument('output_file')
     args = parser.parse_args()
     aggregate(args.study_directory, args.output_file)
+
+
+def make_shortcuts():
+    from importlib.resources import files
+    import os
+    import sys
+    from pyshortcuts import make_shortcut, platform
+    bindir = 'bin'
+    if platform.startswith('win'):
+        bindir = 'Scripts'
+
+    icon_file = files('ncrar_abr').joinpath('abr-icon.ico')
+
+    shortcut = make_shortcut(
+        os.path.normpath(os.path.join(sys.prefix, bindir, 'ncrar-abr')),
+        name='Auditory Wave Analysis',
+        folder='NCRAR',
+        description='Auditroy Wave Analysis customized for NCRAR',
+        icon=icon_file,
+        terminal=False,
+        desktop=False,
+        startmenu=True,
+    )
+
+
+def main_compare():
+    parser = argparse.ArgumentParser("ncrar-abr-compare")
+    add_default_arguments(parser, waves=False)
+    parser.add_argument('directory')
+    options = parse_args(parser, waves=False)
+
+    cols = ['filename', 'analyzed_filename', 'subject', 'frequency', 'Level', 'Replicate', 'Channel', 'analyzer']
+    app = QtApplication()
+    _, waves = options['parser'].load_analyses(options['directory'])
+    waves = waves.set_index(cols).sort_index()
+
+    presenter_a = WaveformPresenter(parser=options['parser'], interactive=False)
+    presenter_b = WaveformPresenter(parser=options['parser'], interactive=False)
+    presenter_c = WaveformPresenter(parser=options['parser'])
+    compare = Compare(waves=waves)
+    view = CompareWindow(parser=options['parser'],
+                         compare=compare,
+                         presenter_a=presenter_a,
+                         presenter_b=presenter_b,
+                         presenter_c=presenter_c,
+                         )
+    view.show()
+    app.start()
+    app.stop()

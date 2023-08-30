@@ -12,8 +12,8 @@ from enaml.widgets.api import (CheckBox, Container, Field, FileDialogEx,
                                HGroup, Label, MainWindow, ObjectCombo,
                                PushButton)
 
-from abr import main_icon
-from abr.parsers import PARSER_MAP
+from ncrar_abr import main_icon
+from ncrar_abr.parsers import PARSER_MAP
 
 
 class Settings(Atom):
@@ -60,12 +60,12 @@ class Settings(Atom):
         return args
 
     def launch_basic(self):
-        args = ['abr-gui']
+        args = ['ncrar-abr-gui']
         args.extend(self.get_default_args())
         result = subprocess.check_output(args)
 
     def launch_batch(self):
-        args = ['abr-batch', '--skip-errors', self.study_folder]
+        args = ['ncrar-abr-batch', '--skip-errors', self.study_folder]
         args.extend(self.get_default_args())
         result = subprocess.check_output(args)
         if result.decode().strip() == 'No files to process':
@@ -73,11 +73,11 @@ class Settings(Atom):
             raise ValueError(mesg)
 
     def launch_export(self, output_file):
-        args = ['abr-aggregate', self.study_folder, output_file]
+        args = ['ncrar-abr-aggregate', self.study_folder, output_file]
         result = subprocess.check_output(args)
 
     def launch_compare(self):
-        args = ['abr-compare', self.study_folder]
+        args = ['ncrar-abr-compare', self.study_folder]
         args.extend(self.get_default_args(waves=False))
         print(' '.join(args))
         result = subprocess.check_output(args)

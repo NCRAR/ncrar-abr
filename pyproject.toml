@@ -1,7 +1,7 @@
 [project]
 name = "ncrar-abr"
 description = "Evoked potential analysis software"
-requires-python = ">=3.7"
+requires-python = ">=3.9"
 license = {file = "LICENSE.txt"}
 readme = "README.md"
 authors = [
@@ -22,6 +22,7 @@ dependencies = [
 	"pandas",
 	"matplotlib",
     "openpyxl",
+    "pyshortcuts",
 ]
 dynamic = ["version"]
 classifiers = [
@@ -36,18 +37,19 @@ documentation = "https://github.com/NCRAR/ncrar-abr"
 repository = "https://github.com/NCRAR/ncrar-abr"
 
 [project.scripts]
-abr = "abr.app:main_launcher"
-abr-aggregate = "abr.app:main_aggregate"
-abr-gui = "abr.app:main_gui"
-abr-batch = "abr.app:main_batch"
-abr-compare = "abr.app:main_compare"
+ncrar-abr = "ncrar_abr.app:main_launcher"
+ncrar-abr-aggregate = "ncrar_abr.app:main_aggregate"
+ncrar-abr-gui = "ncrar_abr.app:main_gui"
+ncrar-abr-batch = "ncrar_abr.app:main_batch"
+ncrar-abr-compare = "ncrar_abr.app:main_compare"
+ncrar-abr-make-shortcuts = "ncrar_abr.app:make_shortcuts"
 
 [build-system]
 requires = ["setuptools>=61.2", "wheel", "setuptools_scm[toml]>=3.4.3"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-write_to = "abr/version.py"
+write_to = "ncrar_abr/version.py"
 
 [tool.setuptools.packages.find]
 exclude = ["packaging"]

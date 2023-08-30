@@ -11,10 +11,9 @@ from enaml.core.api import d_, Declarative
 from enaml.qt.qt_application import QtApplication
 
 with enaml.imports():
-    from abr.compare_window import CompareWindow
+    from ncrar_abr.compare_window import CompareWindow
 
-from abr.app import add_default_arguments, parse_args
-from abr.presenter import WaveformPresenter
+from ncrar_abr.presenter import WaveformPresenter
 
 
 class Compare(Declarative):
@@ -122,29 +121,3 @@ class Compare(Declarative):
                     key = (filename, frequency * 1e3, level, replicate, analyzed_a, analyzed_b)
                     selected.append(key)
         self.selected_points = selected
-
-
-def main():
-    parser = argparse.ArgumentParser("abr_compare")
-    add_default_arguments(parser, waves=False)
-    parser.add_argument('directory')
-    options = parse_args(parser, waves=False)
-
-    cols = ['filename', 'analyzed_filename', 'subject', 'frequency', 'Level', 'Replicate', 'Channel', 'analyzer']
-    app = QtApplication()
-    _, waves = options['parser'].load_analyses(options['directory'])
-    waves = waves.set_index(cols).sort_index()
-
-    presenter_a = WaveformPresenter(parser=options['parser'], interactive=False)
-    presenter_b = WaveformPresenter(parser=options['parser'], interactive=False)
-    presenter_c = WaveformPresenter(parser=options['parser'])
-    compare = Compare(waves=waves)
-    view = CompareWindow(parser=options['parser'],
-                         compare=compare,
-                         presenter_a=presenter_a,
-                         presenter_b=presenter_b,
-                         presenter_c=presenter_c,
-                         )
-    view.show()
-    app.start()
-    app.stop()

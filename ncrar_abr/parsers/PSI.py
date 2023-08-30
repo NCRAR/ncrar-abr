@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from abr.datatype import ABRWaveform, ABRSeries
+from ncrar_abr.datatype import ABRWaveform, ABRSeries
 
 
 #base_template = 'ABR -1.0ms to 9.0ms{}matched epochs average waveforms.csv'

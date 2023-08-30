@@ -17,8 +17,8 @@ from enaml.widgets.api import (Action, ActionGroup, CheckBox, Container,
                                ObjectCombo, ProgressBar, PushButton,
                                ToolButton, VGroup)
 
-from abr import main_icon
-from abr.datatype import Point
+from ncrar_abr import main_icon
+from ncrar_abr.datatype import Point
 
 
 def bind(figure, presenter):
@@ -272,7 +272,7 @@ def add_dock_item(dock_area, model, path, presenter, analyzed_filenames):
 
 
 def load_files(parser, filenames, dock_area):
-    from abr.presenter import WaveformPresenter
+    from ncrar_abr.presenter import WaveformPresenter
     messages = []
     for filename, frequencies in filenames:
         try:

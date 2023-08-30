@@ -8,8 +8,8 @@ from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 from matplotlib import transforms as T
 
-from abr.abrpanel import WaveformPlot
-from abr.datatype import ABRSeries, WaveformPoint, Point
+from .abrpanel import WaveformPlot
+from .datatype import ABRSeries, WaveformPoint, Point
 
 
 def plot_model(axes, model):

@@ -4,7 +4,7 @@ import os.path
 import tables
 import numpy as np
 
-from abr.datatype import ABRWaveform, ABRSeries
+from ncrar_abr.datatype import ABRWaveform, ABRSeries
 
 
 def load(fname, filter=None, abr_window=8.5e-3, frequencies=None):

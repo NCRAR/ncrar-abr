@@ -10,11 +10,12 @@ The program works with the text file exported by the IHS system at the NCRAR.
 
 The simplest way to get started is to download the [Anaconda Python Distribution](https://www.anaconda.com/distribution/). Once installed, you will have new programs available in your start menu. Open `Anaconda Prompt` and type the following sequence of commands to install the program:
 
-	conda create -n ncrar-abr
+	conda create -n ncrar-abr python>=3.9
 	conda activate ncrar-abr
 	pip install ncrar-abr
+    conda run -n ncrar-abr ncrar-abr-make-shortcuts
 
-Note that previous versions of the software added a shortcut to the start menu. Newer versions no longer do (the mechanism through which the shortcuts were created are very fragile and we have moved away from it). To run the program, you need to open the `Anaconda Prompt` and type:
+Note that previous versions of the software automatically added a shortcut to the start menu. NowNewer versions no longer do (the mechanism through which the shortcuts were created are very fragile and we have moved away from it). To run the program, you need to open the `Anaconda Prompt` and type:
 
 	conda run -n ncrar-abr abr
 
@@ -22,7 +23,7 @@ Note that previous versions of the software added a shortcut to the start menu. 
 
 If you wish to test a newer version of the ABR program without losing your current copy (e.g., to test a new feature), you can install the new version alongside your main one. The best way to do this is to open the `Anaconda Prompt` and type:
 
-	conda create -n ncrar-abr-test
+	conda create -n ncrar-abr-test python>=3.9
 	conda activate ncrar-abr-test
 	pip install ncrar-abr
 

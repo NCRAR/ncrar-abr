@@ -7,9 +7,8 @@ from enaml.layout.api import (align, AreaLayout, DockBarLayout, grid, hbox,
 from enaml.stdlib.message_box import question
 from enaml.widgets.api import Action, Container, DockArea, DockItem, Label, MainWindow, Menu, MenuBar, ObjectCombo
 
-from abr import main_icon
-from abr.app import config_path
-from abr.main_window import ABRCanvas, fmt_freq, mpl_connect, MPLContainer
+from ncrar_abr import main_icon
+from ncrar_abr.main_window import ABRCanvas, fmt_freq, mpl_connect, MPLContainer
 
 
 def default_layout():
@@ -26,6 +25,7 @@ def default_size():
     return (1000, 800)
 
 def load_layout(window, dock_area):
+    from ncrar_abr.app import config_path
     layout_file = config_path() / 'compare.layout'
     if layout_file.exists():
         with layout_file.open('rb') as fh:
