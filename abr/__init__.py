@@ -13,6 +13,4 @@ def load_icon():
 
 main_icon = load_icon()
 
-from ._version import get_versions
-__version__ = get_versions()['version']
-del get_versions
+from .version import __version__

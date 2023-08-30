@@ -1,0 +1,53 @@
+[project]
+name = "ABR"
+description = "Evoked potential analysis software"
+requires-python = ">=3.7"
+license = {file = "LICENSE.txt"}
+readme = "README.md"
+authors = [
+    {name = "Brad Buran", email="bburan@alum.mit.edu"},
+    {name = "Brad Buran", email="buran@ohsu.edu"},
+    {name = "Brad Buran", email="bradley.buran@va.gov"},
+]
+maintainers = [
+    {name = "Brad Buran", email="bburan@alum.mit.edu"},
+    {name = "Brad Buran", email="buran@ohsu.edu"},
+    {name = "Brad Buran", email="bradley.buran@va.gov"},
+]
+dependencies = [
+	"atom",
+	"enaml[qt6-pyside]",
+	"numpy",
+	"scipy",
+	"pandas",
+	"matplotlib",
+    "openpyxl",
+]
+dynamic = ["version"]
+classifiers = [
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: BSD License",
+]
+
+[project.urls]
+homepage = "https://github.com/NCRAR/ncrar-abr"
+documentation = "https://github.com/NCRAR/ncrar-abr"
+repository = "https://github.com/NCRAR/ncrar-abr"
+
+[project.scripts]
+abr = "abr.app:main_launcher"
+abr-aggregate = "abr.app:main_aggregate"
+abr-gui = "abr.app:main_gui"
+abr-batch = "abr.app:main_batch"
+abr-compare = "abr.app:main_compare"
+
+[build-system]
+requires = ["setuptools>=61.2", "wheel", "setuptools_scm[toml]>=3.4.3"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "abr/version.py"
+
+[tool.setuptools.packages.find]
+exclude = ["packaging"]

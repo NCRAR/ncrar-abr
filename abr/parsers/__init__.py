@@ -286,7 +286,7 @@ class Parser(object):
 CONTENT = '''
 # Threshold (dB SPL): {threshold:.2f}
 # Frequency (kHz): {frequency:.2f}
-# file_format_version: 0.0.2
+# file_format_version: 0.0.3
 # code_version: {version}
 {metadata}
 # NOTE: Negative latencies indicate no peak. NaN for amplitudes indicate peak was unscorable.
