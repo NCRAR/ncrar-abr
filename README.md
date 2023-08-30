@@ -15,9 +15,11 @@ The simplest way to get started is to download the [Anaconda Python Distribution
 	pip install ncrar-abr
     conda run -n ncrar-abr ncrar-abr-make-shortcuts
 
-Note that previous versions of the software automatically added a shortcut to the start menu. NowNewer versions no longer do (the mechanism through which the shortcuts were created are very fragile and we have moved away from it). To run the program, you need to open the `Anaconda Prompt` and type:
+Note that previous versions of the software automatically added a shortcut to the start menu. These shortcuts must now be created by running the following command in an `Anaconda Prompt` (you can run it immediately after typing `pip install ncrar-abr`). 
 
-	conda run -n ncrar-abr abr
+    conda run -n ncrar-abr ncrar-abr-make-shortcuts
+
+You will then have a shortcut in the Windows Start menu.
 
 ### Running pilot versions
 
