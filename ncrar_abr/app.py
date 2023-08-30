@@ -13,6 +13,7 @@ from enaml.application import deferred_call
 from enaml.qt.qt_application import QtApplication
 from enaml.qt.QtCore import QStandardPaths
 
+
 with enaml.imports():
     from enaml.stdlib.message_box import information
     from ncrar_abr.compare import Compare
@@ -22,7 +23,7 @@ with enaml.imports():
     from ncrar_abr.presenter import SerialWaveformPresenter, WaveformPresenter
 
 
-from ncrar_abr import parsers
+from ncrar_abr import parsers, __version__
 from ncrar_abr.parsers import Parser
 
 
@@ -243,7 +244,7 @@ def make_shortcuts():
 
     shortcut = make_shortcut(
         os.path.normpath(os.path.join(sys.prefix, bindir, 'ncrar-abr')),
-        name='Auditory Wave Analysis',
+        name=f'ABR {__version__}',
         folder='NCRAR',
         description='Auditroy Wave Analysis customized for NCRAR',
         icon=icon_file,
