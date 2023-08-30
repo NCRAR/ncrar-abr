@@ -1,5 +1,5 @@
 [project]
-name = "ABR"
+name = "ncrar-abr"
 description = "Evoked potential analysis software"
 requires-python = ">=3.7"
 license = {file = "LICENSE.txt"}
