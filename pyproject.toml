@@ -22,7 +22,6 @@ dependencies = [
 	"pandas",
 	"matplotlib",
     "openpyxl",
-    "pyshortcuts",
 ]
 dynamic = ["version"]
 classifiers = [
@@ -42,7 +41,6 @@ ncrar-abr-aggregate = "ncrar_abr.app:main_aggregate"
 ncrar-abr-gui = "ncrar_abr.app:main_gui"
 ncrar-abr-batch = "ncrar_abr.app:main_batch"
 ncrar-abr-compare = "ncrar_abr.app:main_compare"
-ncrar-abr-make-shortcuts = "ncrar_abr.app:make_shortcuts"
 
 [build-system]
 requires = ["setuptools>=61.2", "wheel", "setuptools_scm[toml]>=3.4.3"]

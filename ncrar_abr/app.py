@@ -231,29 +231,6 @@ def main_aggregate():
     aggregate(args.study_directory, args.output_file)
 
 
-def make_shortcuts():
-    from importlib.resources import files
-    import os
-    import sys
-    from pyshortcuts import make_shortcut, platform
-    bindir = 'bin'
-    if platform.startswith('win'):
-        bindir = 'Scripts'
-
-    icon_file = files('ncrar_abr').joinpath('abr-icon.ico')
-
-    shortcut = make_shortcut(
-        os.path.normpath(os.path.join(sys.prefix, bindir, 'ncrar-abr')),
-        name=f'ABR {__version__}',
-        folder='NCRAR',
-        description='Auditroy Wave Analysis customized for NCRAR',
-        icon=icon_file,
-        terminal=False,
-        desktop=False,
-        startmenu=True,
-    )
-
-
 def main_compare():
     parser = argparse.ArgumentParser("ncrar-abr-compare")
     add_default_arguments(parser, waves=False)
