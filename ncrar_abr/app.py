@@ -61,7 +61,7 @@ def add_default_arguments(parser, waves=True):
     parser.add_argument('--order',
                         help='Filter order, default 1st order', default=1,
                         type=int)
-    parser.add_argument('--parser', default='HDF5', help='Parser to use')
+    parser.add_argument('--parser', default='NCRAR', help='Parser to use')
     parser.add_argument('--user', help='Name of person analyzing data')
     parser.add_argument('--calibration', help='Calibration file')
     parser.add_argument('--latency', help='Latency file')
