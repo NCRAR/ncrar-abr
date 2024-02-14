@@ -110,6 +110,12 @@ def load_metadata(filename, calibration=None, system='USB'):
             if line.startswith('Data Pnt:'):
                 break
             name = line.split(',', 1)[0].strip(':').lower()
+            if name == 'comment':
+                # In the new IHS system there is a blank comment field that is
+                # causing issues. A better approach would be to figure out why
+                # there are so many commas in between the various header items.
+                # These are presumably placeholders for some other metric?
+                continue
             info[name] = _parse_line(line)
     info = pd.DataFrame(info)
 
