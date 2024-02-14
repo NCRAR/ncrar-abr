@@ -2,7 +2,7 @@ name: Publish Python distribution to PyPI
 on: 
   push:
     tags:
-      - '[0-9].[0-9]+.[0-9]+'
+      - 'ncrar-abr-[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   pypi-publish:
@@ -15,10 +15,10 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@main
-      - name: Setup Python 3.10
+      - name: Setup Python 3.11
         uses: actions/setup-python@v3
         with:
-          python-version: "3.10"
+          python-version: "3.11"
       - name: Install pypa/build
         run: >-
           python -m 
